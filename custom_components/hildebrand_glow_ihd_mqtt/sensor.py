@@ -306,6 +306,11 @@ class HildebrandGlowMqttSensor(SensorEntity):
         return self._state_class
 
     @property
+    def device_class(self):
+        """Return the device class of the sensor."""
+        return self._device_class
+
+    @property
     def icon(self):
         """Return the icon of the sensor."""
-        return None #self._icon
+        return None #self._icon - HA recommends leaving to 'device_class' defaults unless confusing.
