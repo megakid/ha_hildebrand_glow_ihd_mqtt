@@ -219,7 +219,7 @@ async def async_setup_platform(
     ) 
 
     async_add_entities(
-        list(itertools.chain([ug.all_sensors() for ug in updateGroups]))
+        list(itertools.chain([ug.all_sensors for ug in updateGroups]))
     )
 
 class HildebrandGlowMqttSensorUpdateGroup:
