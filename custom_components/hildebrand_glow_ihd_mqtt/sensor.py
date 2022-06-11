@@ -240,7 +240,7 @@ class HildebrandGlowMqttSensorUpdateGroup:
         payload = message.payload
         if (self._topicRegex.search(topic)):
             _LOGGER.debug("Matched on %s", self._topicRegex.pattern)
-            parsed_data = json.load(payload)
+            parsed_data = json.loads(payload)
             for sensor in self._sensors.values():
                 sensor.process_update(parsed_data)
 
