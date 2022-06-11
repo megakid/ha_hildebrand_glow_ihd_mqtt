@@ -1,0 +1,9 @@
+{
+    "domain": "hildebrand_glow_ihd_mqtt",
+    "name": "Hildebrand Hlow IHD MQTT",
+    "documentation": "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt",
+    "codeowners": ["@megakid"],
+    "dependencies": ["mqtt"],
+    "iot_class": "local_push",
+    "version": "1.0.0"
+  }

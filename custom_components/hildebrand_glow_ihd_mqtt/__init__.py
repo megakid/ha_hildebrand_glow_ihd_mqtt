@@ -1,0 +1,1 @@
+"""The hildebrand_glow_ihd_mqtt component."""
