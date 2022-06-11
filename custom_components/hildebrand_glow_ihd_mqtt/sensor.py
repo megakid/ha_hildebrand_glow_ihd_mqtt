@@ -6,8 +6,6 @@ import re
 import logging
 from typing import Iterable
 import itertools
-
-
 import voluptuous as vol
 
 from homeassistant.components import mqtt
@@ -24,19 +22,9 @@ from homeassistant.util import dt
 
 _LOGGER = logging.getLogger(__name__)
 
-ATTR_DISTANCE = "distance"
-ATTR_ROOM = "room"
-
-CONF_AWAY_TIMEOUT = "away_timeout"
-
-DEFAULT_AWAY_TIMEOUT = 0
-DEFAULT_NAME = "Room Sensor"
-DEFAULT_TIMEOUT = 5
-DEFAULT_TOPIC = "room_presence"
-
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_DEVICE_ID): cv.string,
+        vol.Required(CONF_DEVICE_ID): cv.string
     }
 )
 
@@ -47,7 +35,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 ELECTRICITY_SENSORS = [
   {
     "name": "Smart Meter Electricity: Export",
-    "unique_id": "smart_meter_electricity_export",
+    "unique_id": "glow_ihd_electricity_export",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "total_increasing",
@@ -57,7 +45,7 @@ ELECTRICITY_SENSORS = [
   },
   {
     "name": "Smart Meter Electricity: Import",
-    "unique_id": "smart_meter_electricity_import",
+    "unique_id": "glow_ihd_electricity_import",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "total_increasing",
@@ -67,7 +55,7 @@ ELECTRICITY_SENSORS = [
   },
   {
     "name": "Smart Meter Electricity: Import (Today)",
-    "unique_id": "smart_meter_electricity_import_day",
+    "unique_id": "glow_ihd_electricity_import_day",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "measurement",
@@ -77,7 +65,7 @@ ELECTRICITY_SENSORS = [
   },
   {
     "name": "Smart Meter Electricity: Import (This week)",
-    "unique_id": "smart_meter_electricity_import_week",
+    "unique_id": "glow_ihd_electricity_import_week",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "measurement",
@@ -87,17 +75,17 @@ ELECTRICITY_SENSORS = [
   },
   {
     "name": "Smart Meter Electricity: Import (This month)",
-    "unique_id": "smart_meter_electricity_import_month",
+    "unique_id": "glow_ihd_electricity_import_month",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "measurement",
-    "value_template": "{{ value_json['electricitymeter']['energy']['import']['month'] }}",
+    # "value_template": "{{ value_json['electricitymeter']['energy']['import']['month'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['month'],
   },
   {
     "name": "Smart Meter Electricity: Import Unit Rate",
-    "unique_id": "smart_meter_electricity_import_unit_rate",
+    "unique_id": "glow_ihd_electricity_import_unit_rate",
     "device_class": "monetary",
     "unit_of_measurement": "GBP/kWh",
     "state_class": "measurement",
@@ -107,7 +95,7 @@ ELECTRICITY_SENSORS = [
   },
   {
     "name": "Smart Meter Electricity: Import Standing Charge",
-    "unique_id": "smart_meter_electricity_import_standing_charge",
+    "unique_id": "glow_ihd_electricity_import_standing_charge",
     "device_class": "monetary",
     "unit_of_measurement": "GBP",
     "state_class": "measurement",
@@ -117,7 +105,7 @@ ELECTRICITY_SENSORS = [
   },
   {
     "name": "Smart Meter Electricity: Power",
-    "unique_id": "smart_meter_electricity_power",
+    "unique_id": "glow_ihd_electricity_power",
     "device_class": "power",
     "unit_of_measurement": "kW",
     "state_class": "measurement",
@@ -130,7 +118,7 @@ ELECTRICITY_SENSORS = [
 GAS_SENSORS = [
   {
     "name": "Smart Meter Gas: Import",
-    "unique_id": "smart_meter_gas_import",
+    "unique_id": "glow_ihd_gas_import",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "total_increasing",
@@ -140,7 +128,7 @@ GAS_SENSORS = [
   },
   {
     "name": "Smart Meter Gas: Import (Today)",
-    "unique_id": "smart_meter_gas_import_day",
+    "unique_id": "glow_ihd_gas_import_day",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "measurement",
@@ -150,7 +138,7 @@ GAS_SENSORS = [
   },
   {
     "name": "Smart Meter Gas: Import (This week)",
-    "unique_id": "smart_meter_gas_import_week",
+    "unique_id": "glow_ihd_gas_import_week",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "measurement",
@@ -160,7 +148,7 @@ GAS_SENSORS = [
   },
   {
     "name": "Smart Meter Gas: Import (This month)",
-    "unique_id": "smart_meter_gas_import_month",
+    "unique_id": "glow_ihd_gas_import_month",
     "device_class": "energy",
     "unit_of_measurement": "kWh",
     "state_class": "measurement",
@@ -170,7 +158,7 @@ GAS_SENSORS = [
   },
   {
     "name": "Smart Meter Gas: Import Unit Rate",
-    "unique_id": "smart_meter_gas_import_unit_rate",
+    "unique_id": "glow_ihd_gas_import_unit_rate",
     "device_class": "monetary",
     "unit_of_measurement": "GBP/kWh",
     "state_class": "measurement",
@@ -180,7 +168,7 @@ GAS_SENSORS = [
   },
   {
     "name": "Smart Meter Gas: Import Standing Charge",
-    "unique_id": "smart_meter_gas_import_standing_charge",
+    "unique_id": "glow_ihd_gas_import_standing_charge",
     "device_class": "monetary",
     "unit_of_measurement": "GBP",
     "state_class": "measurement",
@@ -190,7 +178,7 @@ GAS_SENSORS = [
   },
   {
     "name": "Smart Meter Gas: Power",
-    "unique_id": "smart_meter_gas_power",
+    "unique_id": "glow_ihd_gas_power",
     "device_class": "power",
     "unit_of_measurement": "kW",
     "state_class": "measurement",

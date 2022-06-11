@@ -12,8 +12,9 @@ Hildebrand Glow IHD Local MQTT Home Assistant integration
 3. Install the `hildebrand_glow_ihd_mqtt` integration inside HACS
 5. To your HA `configuration.yaml`, add the following:
 ```yaml
-hildebrand_glow_ihd_mqtt:
-  device_id: '[the mac address of your Hildebrand Glow IHD device - see step 3]'
+sensors:
+  - platform: hildebrand_glow_ihd_mqtt
+    device_id: 1234ABC31234 [the mac address of your Hildebrand Glow IHD device - see step 3]
 ```
 6. Restart HA
 7. Your various `sensor` will be named something like `sensor.smart_meter...`
