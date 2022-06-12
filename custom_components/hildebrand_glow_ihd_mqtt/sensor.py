@@ -16,6 +16,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.helpers.entity import DeviceInfo
+from .const import DOMAIN
 from homeassistant.const import (
     CONF_DEVICE_ID,
     ATTR_DEVICE_ID,
@@ -32,13 +33,6 @@ from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
-
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        # NOTE: WE ABSOLUTELY ASSUME IS THIS IS NOT CONFIGURED, THERES ONLY ONE DEVICE CONNECTED TO MQTT. IF THIS IS NOT THE CASE, BAD THINGS WILL HAPPEN
-        vol.Optional(CONF_DEVICE_ID, default='+'): cv.string
-    }
-)
 
 # glow/XXXXXXYYYYYY/STATE                   {"software":"v1.8.12","timestamp":"2022-06-11T20:54:53Z","hardware":"GLOW-IHD-01-1v4-SMETS2","ethmac":"1234567890AB","smetsversion":"SMETS2","eui":"12:34:56:78:91:23:45","zigbee":"1.2.5","han":{"rssi":-75,"status":"joined","lqi":100}}
 # glow/XXXXXXYYYYYY/SENSOR/electricitymeter {"electricitymeter":{"timestamp":"2022-06-11T20:38:00Z","energy":{"export":{"cumulative":0.000,"units":"kWh"},"import":{"cumulative":6613.405,"day":13.252,"week":141.710,"month":293.598,"units":"kWh","mpan":"1234","supplier":"ABC ENERGY","price":{"unitrate":0.04998,"standingcharge":0.24030}}},"power":{"value":0.951,"units":"kW"}}}
@@ -187,15 +181,10 @@ GAS_SENSORS = [
   }
 ]
 
-async def async_setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
-) -> None:
 
+async def async_setup_entry(hass, config_entry, async_add_entities):
     # the config is defaulted to + which happens to mean we will subscribe to all devices (note, THERE MUST ONLY BE ONE!)
-    device_mac = config.get(CONF_DEVICE_ID).upper()
+    device_mac = hass.data[DOMAIN][config_entry.entry_id][CONF_DEVICE_ID]
 
     # state_sub = await mqtt.async_subscribe(
     #   hass, f"glow/{device_mac}/STATE", 1
@@ -267,8 +256,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={("subscription_mode", device_id)},
             manufacturer="Hildebrand Technology Limited",
-            model="Glow Smart Meter IHD",
-            name="Glow Smart Meter IHD",
+            model="Glow Smart Meter IHD"
         )
         self._attr_native_value = None
 
