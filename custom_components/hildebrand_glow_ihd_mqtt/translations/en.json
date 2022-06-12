@@ -1,0 +1,33 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "Already configured"
+    },
+    "error": {
+      "cannot_connect": "Failed to connect, please try again.",
+      "invalid_auth": "Invalid authentication.",
+      "too_many_requests": "Too many requests, retry later.",
+      "unknown": "Unexpected error."
+    },
+    "step": {
+      "user": {
+        "description": "Configuring Hildebrand Glow IHD Local MQTT.",
+        "data": {
+          "device_id": "Device Id (leave as + for auto-detect if you only have one device)",
+        },
+        "title": "Hildebrand Glow IHD Local MQTT"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "user": {
+        "data": {
+          "offpeak_start": "Offpeak Start (normally 23:30)",
+          "offpeak_end": "Offpeak End (normally 05:30)"
+        },
+        "title": "Octopus Intelligent - Options"
+      }
+    }
+  }
+}

@@ -13,13 +13,8 @@ Inspired and heavily based on robertalexa's forum thread here: https://community
 4. Add repository to HACS (see https://hacs.xyz/docs/faq/custom_repositories) - use "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt" as the repository URL.
 5. Install the `hildebrand_glow_ihd_mqtt` integration inside HACS
 6. Restart HA
-7. If you only have ONE IHD then in your HA `configuration.yaml`, add the following:
-```yaml
-sensors:
-  - platform: hildebrand_glow_ihd_mqtt
-```
-8. Restart HA
-9. Your various `sensor`s will be named something like `sensor.smart_meter...`
+7. Add Hildebrand Glow IHD MQTT integration using the normal HA integration configuration screen.
+8. Your various `sensor`s will be named something like `sensor.smart_meter...`
 
 
 If you have more than one device (for some reason) then you will need to pick one:
