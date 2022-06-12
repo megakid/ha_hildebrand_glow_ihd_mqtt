@@ -5,12 +5,10 @@ import json
 import re
 import logging
 from typing import Iterable
-import voluptuous as vol
 
 from homeassistant.components import mqtt
 from homeassistant.components.mqtt.models import ReceiveMessage
 from homeassistant.components.sensor import (
-    PLATFORM_SCHEMA, 
     SensorEntity,
     SensorDeviceClass,
     SensorStateClass,
@@ -24,12 +22,8 @@ from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
     POWER_KILO_WATT
 )
-from homeassistant.core import HomeAssistant, callback
-import homeassistant.helpers.config_validation as cv
+from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
@@ -248,7 +242,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._ignore_zero_values = ignore_zero_values
         self._attr_name = name
         self._attr_unique_id = slugify(device_id + "_" + name)
-        #self._attr_icon = icon
+        self._attr_icon = icon
         self._attr_device_class = device_class
         self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_state_class = state_class
@@ -256,7 +250,8 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={("subscription_mode", device_id)},
             manufacturer="Hildebrand Technology Limited",
-            model="Glow Smart Meter IHD"
+            model="Glow Smart Meter IHD",
+            name="Glow Smart Meter IHD"
         )
         self._attr_native_value = None
 

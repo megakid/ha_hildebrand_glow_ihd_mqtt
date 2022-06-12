@@ -6,11 +6,11 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.const import (
-    CONF_DEVICE_ID,
+    CONF_DEVICE_ID
 )
 
 from .const import (
-    DOMAIN,
+    DOMAIN
 )
 
 _LOGGER = logging.getLogger(__name__)
