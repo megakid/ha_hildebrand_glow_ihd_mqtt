@@ -17,9 +17,6 @@ Inspired and heavily based on robertalexa's forum thread here: https://community
 8. Your various `sensor`s will be named something like `sensor.smart_meter...`
 
 
-If you have more than one device (for some reason) then you will need to pick one:
-```yaml
-sensors:
-  - platform: hildebrand_glow_ihd_mqtt
-    device_id: 1234ABC31234 [the mac address of your Hildebrand Glow IHD device - see step 3]
-```
+If you have more than one device (for some reason) then you will need to pick one when setting up the integration:
+
+![image](https://user-images.githubusercontent.com/1478003/173249987-4724af89-ceaa-4422-a426-4b8a2b16d98e.png)
