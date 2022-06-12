@@ -5,26 +5,38 @@ import json
 import re
 import logging
 from typing import Iterable
-import itertools
 import voluptuous as vol
 
 from homeassistant.components import mqtt
 from homeassistant.components.mqtt.models import ReceiveMessage
-from homeassistant.components.sensor import PLATFORM_SCHEMA, SensorEntity
+from homeassistant.components.sensor import (
+    PLATFORM_SCHEMA, 
+    SensorEntity,
+    SensorDeviceClass,
+    SensorStateClass,
+)
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.const import (
     CONF_DEVICE_ID,
+    ATTR_DEVICE_ID,
+
+    ENERGY_KILO_WATT_HOUR,
+    POWER_KILO_WATT
 )
 from homeassistant.core import HomeAssistant, callback
 import homeassistant.helpers.config_validation as cv
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
-from homeassistant.util import dt
+from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
+from homeassistant.util import slugify
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_DEVICE_ID): cv.string
+        # NOTE: WE ABSOLUTELY ASSUME IS THIS IS NOT CONFIGURED, THERES ONLY ONE DEVICE CONNECTED TO MQTT. IF THIS IS NOT THE CASE, BAD THINGS WILL HAPPEN
+        vol.Optional(CONF_DEVICE_ID, default='+'): cv.string
     }
 )
 
@@ -35,80 +47,72 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
 ELECTRICITY_SENSORS = [
   {
     "name": "Smart Meter Electricity: Export",
-    "unique_id": "glow_ihd_electricity_export",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "total_increasing",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.TOTAL_INCREASING,
     #"value_template": "{{ value_json['electricitymeter']['energy']['export']['cumulative'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['export']['cumulative'],
   },
   {
     "name": "Smart Meter Electricity: Import",
-    "unique_id": "glow_ihd_electricity_import",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "total_increasing",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.TOTAL_INCREASING,
     #"value_template": "{% if value_json['electricitymeter']['energy']['import']['cumulative'] == 0 %}\n  {{ states('sensor.smart_meter_electricity_import') }}\n{% else %}\n  {{ value_json['electricitymeter']['energy']['import']['cumulative'] }}\n{% endif %}\n",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['cumulative'],
   },
   {
     "name": "Smart Meter Electricity: Import (Today)",
-    "unique_id": "glow_ihd_electricity_import_day",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['electricitymeter']['energy']['import']['day'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['day'],
   },
   {
     "name": "Smart Meter Electricity: Import (This week)",
-    "unique_id": "glow_ihd_electricity_import_week",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['electricitymeter']['energy']['import']['week'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['week'],
   },
   {
     "name": "Smart Meter Electricity: Import (This month)",
-    "unique_id": "glow_ihd_electricity_import_month",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.MEASUREMENT,
     # "value_template": "{{ value_json['electricitymeter']['energy']['import']['month'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['month'],
   },
   {
     "name": "Smart Meter Electricity: Import Unit Rate",
-    "unique_id": "glow_ihd_electricity_import_unit_rate",
-    "device_class": "monetary",
+    "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP/kWh",
-    "state_class": "measurement",
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['electricitymeter']['energy']['import']['price']['unitrate'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['electricitymeter']['energy']['import']['price']['unitrate'],
   },
   {
     "name": "Smart Meter Electricity: Import Standing Charge",
-    "unique_id": "glow_ihd_electricity_import_standing_charge",
-    "device_class": "monetary",
+    "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP",
-    "state_class": "measurement",
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['electricitymeter']['energy']['import']['price']['standingcharge'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['electricitymeter']['energy']['import']['price']['standingcharge'],
   },
   {
     "name": "Smart Meter Electricity: Power",
-    "unique_id": "glow_ihd_electricity_power",
-    "device_class": "power",
-    "unit_of_measurement": "kW",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.POWER,
+    "unit_of_measurement": POWER_KILO_WATT,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['electricitymeter']['power']['value'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['power']['value'],
@@ -118,70 +122,63 @@ ELECTRICITY_SENSORS = [
 GAS_SENSORS = [
   {
     "name": "Smart Meter Gas: Import",
-    "unique_id": "glow_ihd_gas_import",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "total_increasing",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.TOTAL_INCREASING,
     #"value_template": "{% if value_json['gasmeter']['energy']['import']['cumulative'] == 0 %}\n  {{ states('sensor.smart_meter_gas_import') }}\n{% else %}\n  {{ value_json['gasmeter']['energy']['import']['cumulative'] }}\n{% endif %}\n",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['cumulative']
   },
   {
     "name": "Smart Meter Gas: Import (Today)",
-    "unique_id": "glow_ihd_gas_import_day",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['gasmeter']['energy']['import']['day'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['day']
   },
   {
     "name": "Smart Meter Gas: Import (This week)",
-    "unique_id": "glow_ihd_gas_import_week",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['gasmeter']['energy']['import']['week'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['week']
   },
   {
     "name": "Smart Meter Gas: Import (This month)",
-    "unique_id": "glow_ihd_gas_import_month",
-    "device_class": "energy",
-    "unit_of_measurement": "kWh",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['gasmeter']['energy']['import']['month'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['month']
   },
   {
     "name": "Smart Meter Gas: Import Unit Rate",
-    "unique_id": "glow_ihd_gas_import_unit_rate",
-    "device_class": "monetary",
+    "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP/kWh",
-    "state_class": "measurement",
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['gasmeter']['energy']['import']['price']['unitrate'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['gasmeter']['energy']['import']['price']['unitrate']
   },
   {
     "name": "Smart Meter Gas: Import Standing Charge",
-    "unique_id": "glow_ihd_gas_import_standing_charge",
-    "device_class": "monetary",
+    "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP",
-    "state_class": "measurement",
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['gasmeter']['energy']['import']['price']['standingcharge'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['gasmeter']['energy']['import']['price']['standingcharge']
   },
   {
     "name": "Smart Meter Gas: Power",
-    "unique_id": "glow_ihd_gas_power",
-    "device_class": "power",
-    "unit_of_measurement": "kW",
-    "state_class": "measurement",
+    "device_class": SensorDeviceClass.POWER,
+    "unit_of_measurement": POWER_KILO_WATT,
+    "state_class": SensorStateClass.MEASUREMENT,
     #"value_template": "{{ value_json['gasmeter']['power']['value'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['power']['value']
@@ -195,9 +192,15 @@ async def async_setup_platform(
     discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
 
+    # the config is defaulted to + which happens to mean we will subscribe to all devices (note, THERE MUST ONLY BE ONE!)
+    device_mac = config.get(CONF_DEVICE_ID).upper()
+
+    # state_sub = await mqtt.async_subscribe(
+    #   hass, f"glow/{device_mac}/STATE", 1
+    # )
     updateGroups = [
-        HildebrandGlowMqttSensorUpdateGroup("electricitymeter", ELECTRICITY_SENSORS),
-        HildebrandGlowMqttSensorUpdateGroup("gasmeter", GAS_SENSORS)
+        HildebrandGlowMqttSensorUpdateGroup(device_mac, "electricitymeter", ELECTRICITY_SENSORS),
+        HildebrandGlowMqttSensorUpdateGroup(device_mac, "gasmeter", GAS_SENSORS)
     ]
 
     @callback
@@ -210,12 +213,10 @@ async def async_setup_platform(
         for updateGroup in updateGroups:
             updateGroup.process_update(message)
 
-
-    device_mac = config.get(CONF_DEVICE_ID).upper()
-    topic = f"glow/{device_mac}/SENSOR/+"
+    data_topic = f"glow/{device_mac}/SENSOR/+"
 
     await mqtt.async_subscribe(
-        hass, topic, mqtt_message_received, 1
+        hass, data_topic, mqtt_message_received, 1
     ) 
 
     all_sensor_entities = [sensorEntity for updateGroup in updateGroups for sensorEntity in updateGroup.all_sensors]
@@ -227,19 +228,17 @@ async def async_setup_platform(
 class HildebrandGlowMqttSensorUpdateGroup:
     """Representation of Hildebrand Glow MQTT Meter Sensors that all get updated together."""
 
-    def __init__(self, topicRegex: str, meters: Iterable) -> None:
+    def __init__(self, device_id: str, topic_regex: str, meters: Iterable) -> None:
         """Initialize the sensor collection."""
-        self._topicRegex = re.compile(topicRegex)
-        self._sensors = {}
-        for meter in meters:
-            self._sensors[meter['unique_id']] = HildebrandGlowMqttSensor(**meter)
+        self._topic_regex = re.compile(topic_regex)
+        self._sensors = [HildebrandGlowMqttSensor(device_id = device_id, **meter) for meter in meters]
 
     def process_update(self, message: ReceiveMessage) -> None:
         """Process an update from the MQTT broker."""
         topic = message.topic
         payload = message.payload
-        if (self._topicRegex.search(topic)):
-            _LOGGER.debug("Matched on %s", self._topicRegex.pattern)
+        if (self._topic_regex.search(topic)):
+            _LOGGER.debug("Matched on %s", self._topic_regex.pattern)
             parsed_data = json.loads(payload)
             for sensor in self._sensors.values():
                 sensor.process_update(parsed_data)
@@ -252,65 +251,31 @@ class HildebrandGlowMqttSensorUpdateGroup:
 class HildebrandGlowMqttSensor(SensorEntity):
     """Representation of a room sensor that is updated via MQTT."""
 
-    def __init__(self, unique_id, name, icon, unit_of_measurement, state_class, func, device_class = None):
+    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func):
         """Initialize the sensor."""
-        self._unique_id = unique_id
-        self._name = name
-        self._icon = icon
-        self._device_class = device_class
-        self._unit_of_measurement = unit_of_measurement
-        self._state_class = state_class
-        self._func = func
-        
-        self._value = None
-        self._updated = None
+        self._device_id = device_id
+        self._attr_name = name
+        self._attr_unique_id = slugify(device_id + "_" + name)
+        #self._attr_icon = icon
+        self._attr_device_class = device_class
+        self._attr_native_unit_of_measurement = unit_of_measurement
+        self._attr_state_class = state_class
+        self._func = func        
+        self._attr_device_info = DeviceInfo(
+            identifiers={("subscription_mode", device_id)},
+            manufacturer="Hildebrand Technology Limited",
+            model="Glow Smart Meter IHD"
+        )
+        self._attr_native_value = None
 
     def process_update(self, mqtt_data) -> None:
         """Update the state of the sensor."""
-        self._value = self._func(mqtt_data)
-        self._updated = dt.utcnow()
-
+        self._attr_native_value = self._func(mqtt_data)
         self.async_write_ha_state()
-
-    # async def async_added_to_hass(self):
-    #     """Sensor added to hass."""
-
-    @property
-    def unique_id(self) -> str:
-        """Return the unique ID for this sensor."""
-        return self._unique_id
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
 
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
-        return {}
-
-    @property
-    def native_value(self):
-        """Return the current room of the entity."""
-        return self._value
-
-    @property
-    def native_unit_of_measurement(self):
-        """Return the unit of measurement of this entity, if any."""
-        return self._unit_of_measurement
-
-    @property
-    def state_class(self):
-        """Return the state class of the sensor."""
-        return self._state_class
-
-    @property
-    def device_class(self):
-        """Return the device class of the sensor."""
-        return self._device_class
-
-    @property
-    def icon(self):
-        """Return the icon of the sensor."""
-        return None #self._icon - HA recommends leaving to 'device_class' defaults unless confusing.
+        if (self._device_id == "+"):
+          return {}
+        return {ATTR_DEVICE_ID: self._device_id}
