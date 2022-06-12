@@ -267,7 +267,8 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={("subscription_mode", device_id)},
             manufacturer="Hildebrand Technology Limited",
-            model="Glow Smart Meter IHD"
+            model="Glow Smart Meter IHD",
+            name="Glow Smart Meter IHD",
         )
         self._attr_native_value = None
 
