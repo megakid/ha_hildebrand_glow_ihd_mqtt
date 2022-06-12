@@ -62,6 +62,7 @@ ELECTRICITY_SENSORS = [
     #"value_template": "{% if value_json['electricitymeter']['energy']['import']['cumulative'] == 0 %}\n  {{ states('sensor.smart_meter_electricity_import') }}\n{% else %}\n  {{ value_json['electricitymeter']['energy']['import']['cumulative'] }}\n{% endif %}\n",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['cumulative'],
+    "ignore_zero_values": True,
   },
   {
     "name": "Smart Meter Electricity: Import (Today)",
@@ -127,7 +128,8 @@ GAS_SENSORS = [
     "state_class": SensorStateClass.TOTAL_INCREASING,
     #"value_template": "{% if value_json['gasmeter']['energy']['import']['cumulative'] == 0 %}\n  {{ states('sensor.smart_meter_gas_import') }}\n{% else %}\n  {{ value_json['gasmeter']['energy']['import']['cumulative'] }}\n{% endif %}\n",
     "icon": "mdi:fire",
-    "func": lambda js : js['gasmeter']['energy']['import']['cumulative']
+    "func": lambda js : js['gasmeter']['energy']['import']['cumulative'],
+    "ignore_zero_values": True,
   },
   {
     "name": "Smart Meter Gas: Import (Today)",
@@ -240,20 +242,21 @@ class HildebrandGlowMqttSensorUpdateGroup:
         if (self._topic_regex.search(topic)):
             _LOGGER.debug("Matched on %s", self._topic_regex.pattern)
             parsed_data = json.loads(payload)
-            for sensor in self._sensors.values():
+            for sensor in self._sensors:
                 sensor.process_update(parsed_data)
 
     @property
     def all_sensors(self) -> Iterable[HildebrandGlowMqttSensor]:
         """Return all meters."""
-        return self._sensors.values()
+        return self._sensors
 
 class HildebrandGlowMqttSensor(SensorEntity):
     """Representation of a room sensor that is updated via MQTT."""
 
-    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func):
+    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func, ignore_zero_values = False) -> None:
         """Initialize the sensor."""
         self._device_id = device_id
+        self._ignore_zero_values = ignore_zero_values
         self._attr_name = name
         self._attr_unique_id = slugify(device_id + "_" + name)
         #self._attr_icon = icon
@@ -270,7 +273,11 @@ class HildebrandGlowMqttSensor(SensorEntity):
 
     def process_update(self, mqtt_data) -> None:
         """Update the state of the sensor."""
-        self._attr_native_value = self._func(mqtt_data)
+        new_value = self._func(mqtt_data)
+        if (self._ignore_zero_values and new_value == 0):
+            _LOGGER.debug("Ignored new value of %s on %s.", new_value, self._attr_unique_id)
+            return
+        self._attr_native_value = new_value
         self.async_write_ha_state()
 
     @property
