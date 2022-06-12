@@ -13,7 +13,7 @@
       "user": {
         "description": "Configuring Hildebrand Glow IHD Local MQTT.",
         "data": {
-          "device_id": "Device Id (leave as + for auto-detect if you only have one device)",
+          "device_id": "Device Id (leave as + for auto-detect if you only have one device)"
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }
