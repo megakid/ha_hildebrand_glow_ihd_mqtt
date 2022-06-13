@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import re
 import logging
+from turtle import update
 from typing import Iterable
 
 from homeassistant.components import mqtt
@@ -31,6 +32,26 @@ _LOGGER = logging.getLogger(__name__)
 # glow/XXXXXXYYYYYY/STATE                   {"software":"v1.8.12","timestamp":"2022-06-11T20:54:53Z","hardware":"GLOW-IHD-01-1v4-SMETS2","ethmac":"1234567890AB","smetsversion":"SMETS2","eui":"12:34:56:78:91:23:45","zigbee":"1.2.5","han":{"rssi":-75,"status":"joined","lqi":100}}
 # glow/XXXXXXYYYYYY/SENSOR/electricitymeter {"electricitymeter":{"timestamp":"2022-06-11T20:38:00Z","energy":{"export":{"cumulative":0.000,"units":"kWh"},"import":{"cumulative":6613.405,"day":13.252,"week":141.710,"month":293.598,"units":"kWh","mpan":"1234","supplier":"ABC ENERGY","price":{"unitrate":0.04998,"standingcharge":0.24030}}},"power":{"value":0.951,"units":"kW"}}}
 # glow/XXXXXXYYYYYY/SENSOR/gasmeter         {"gasmeter":{"timestamp":"2022-06-11T20:53:52Z","energy":{"export":{"cumulative":0.000,"units":"kWh"},"import":{"cumulative":17940.852,"day":11.128,"week":104.749,"month":217.122,"units":"kWh","mprn":"1234","supplier":"---","price":{"unitrate":0.07320,"standingcharge":0.17850}}},"power":{"value":0.000,"units":"kW"}}}
+
+STATE_SENSORS = [
+  {
+    "name": "Smart Meter IHD Software Version",
+    "device_class": None,
+    "unit_of_measurement": None,
+    "state_class": SensorStateClass.MEASUREMENT,
+    "icon": "mdi:information-outline",
+    "func": lambda js: js["software"],
+
+  },
+  {
+    "name": "Smart Meter IHD Hardware",
+    "device_class": "connectivity",
+    "unit_of_measurement": "",
+    "state_class": SensorStateClass.MEASUREMENT,
+    "icon": "mdi:information-outline",
+    "func": lambda js: js["software"]
+  }
+]
 
 ELECTRICITY_SENSORS = [
   {
@@ -177,38 +198,49 @@ GAS_SENSORS = [
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up the Smart Meter sensors."""
+
     # the config is defaulted to + which happens to mean we will subscribe to all devices (note, THERE MUST ONLY BE ONE!)
     device_mac = hass.data[DOMAIN][config_entry.entry_id][CONF_DEVICE_ID]
 
-    # state_sub = await mqtt.async_subscribe(
-    #   hass, f"glow/{device_mac}/STATE", 1
-    # )
-    updateGroups = [
-        HildebrandGlowMqttSensorUpdateGroup(device_mac, "electricitymeter", ELECTRICITY_SENSORS),
-        HildebrandGlowMqttSensorUpdateGroup(device_mac, "gasmeter", GAS_SENSORS)
-    ]
+    deviceUpdateGroups = {}
 
     @callback
-    def mqtt_message_received(message: ReceiveMessage) -> None:
+    async def mqtt_message_received(message: ReceiveMessage) -> None:
         """Handle received MQTT message."""
         topic = message.topic
         payload = message.payload
-        _LOGGER.debug("Received message: %s", topic)
-        _LOGGER.debug("  Payload: %s", payload)
-        for updateGroup in updateGroups:
-            updateGroup.process_update(message)
+        device_id = topic.split("/")[1]
+        if (device_mac == '+' or device_id == device_mac):
+            updateGroups = await async_get_device_groups(deviceUpdateGroups, async_add_entities, device_id)
+            _LOGGER.debug("Received message: %s", topic)
+            _LOGGER.debug("  Payload: %s", payload)
+            for updateGroup in updateGroups:
+                updateGroup.process_update(message)
 
-    data_topic = f"glow/{device_mac}/SENSOR/+"
+    data_topic = f"glow/#"
 
     await mqtt.async_subscribe(
         hass, data_topic, mqtt_message_received, 1
     ) 
 
-    all_sensor_entities = [sensorEntity for updateGroup in updateGroups for sensorEntity in updateGroup.all_sensors]
 
-    async_add_entities(
-        all_sensor_entities
-    )
+
+async def async_get_device_groups(deviceUpdateGroups, async_add_entities, device_id):
+  #add to update groups if not already there
+  if device_id not in deviceUpdateGroups:
+      _LOGGER.debug("New device found: %s", device_id)
+      groups = [
+          HildebrandGlowMqttSensorUpdateGroup(device_id, async_add_entities, "electricitymeter", ELECTRICITY_SENSORS),
+          HildebrandGlowMqttSensorUpdateGroup(device_id, async_add_entities, "gasmeter", GAS_SENSORS)
+      ]
+      await async_add_entities(
+          [sensorEntity for updateGroup in groups for sensorEntity in updateGroup.all_sensors]
+      )
+      deviceUpdateGroups[device_id] = groups
+
+  return deviceUpdateGroups[device_id]
+  
 
 class HildebrandGlowMqttSensorUpdateGroup:
     """Representation of Hildebrand Glow MQTT Meter Sensors that all get updated together."""
@@ -248,10 +280,10 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._attr_state_class = state_class
         self._func = func        
         self._attr_device_info = DeviceInfo(
-            identifiers={("subscription_mode", device_id)},
+            connections={("mac", device_id)},
             manufacturer="Hildebrand Technology Limited",
             model="Glow Smart Meter IHD",
-            name="Glow Smart Meter IHD"
+            name=device_id,
         )
         self._attr_native_value = None
 
