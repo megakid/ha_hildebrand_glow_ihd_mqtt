@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 import re
 import logging
-from turtle import update
 from typing import Iterable
 
 from homeassistant.components import mqtt
@@ -14,14 +13,16 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorStateClass,
 )
-from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from .const import DOMAIN
 from homeassistant.const import (
     CONF_DEVICE_ID,
     ATTR_DEVICE_ID,
 
     ENERGY_KILO_WATT_HOUR,
-    POWER_KILO_WATT
+    POWER_KILO_WATT,
+    SIGNAL_STRENGTH_DECIBELS,
+    PERCENTAGE,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
@@ -39,17 +40,36 @@ STATE_SENSORS = [
     "device_class": None,
     "unit_of_measurement": None,
     "state_class": SensorStateClass.MEASUREMENT,
+    "entity_category": EntityCategory.DIAGNOSTIC,
     "icon": "mdi:information-outline",
     "func": lambda js: js["software"],
-
   },
   {
     "name": "Smart Meter IHD Hardware",
-    "device_class": "connectivity",
-    "unit_of_measurement": "",
+    "device_class": None,
+    "unit_of_measurement": None,
     "state_class": SensorStateClass.MEASUREMENT,
+    "entity_category": EntityCategory.DIAGNOSTIC,
     "icon": "mdi:information-outline",
-    "func": lambda js: js["software"]
+    "func": lambda js: js["hardware"],
+  },
+  {
+    "name": "Smart Meter IHD HAN RSSI",
+    "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
+    "unit_of_measurement": SIGNAL_STRENGTH_DECIBELS,
+    "state_class": SensorStateClass.MEASUREMENT,
+    "entity_category": EntityCategory.DIAGNOSTIC,
+    "icon": "mdi:wifi-strength-outline",
+    "func": lambda js: js["han"]["rssi"]
+  },
+  {
+    "name": "Smart Meter IHD HAN LQI",
+    "device_class": None,
+    "unit_of_measurement": PERCENTAGE,
+    "state_class": SensorStateClass.MEASUREMENT,
+    "entity_category": EntityCategory.DIAGNOSTIC,
+    "icon": "mdi:wifi-strength-outline",
+    "func": lambda js: js["han"]["lqi"]
   }
 ]
 
@@ -200,13 +220,13 @@ GAS_SENSORS = [
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Smart Meter sensors."""
 
-    # the config is defaulted to + which happens to mean we will subscribe to all devices (note, THERE MUST ONLY BE ONE!)
+    # the config is defaulted to + which happens to mean we will subscribe to all devices
     device_mac = hass.data[DOMAIN][config_entry.entry_id][CONF_DEVICE_ID]
 
     deviceUpdateGroups = {}
 
     @callback
-    async def mqtt_message_received(message: ReceiveMessage) -> None:
+    async def mqtt_message_received(message: ReceiveMessage):
         """Handle received MQTT message."""
         topic = message.topic
         payload = message.payload
@@ -218,7 +238,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             for updateGroup in updateGroups:
                 updateGroup.process_update(message)
 
-    data_topic = f"glow/#"
+    data_topic = "glow/#"
 
     await mqtt.async_subscribe(
         hass, data_topic, mqtt_message_received, 1
@@ -227,19 +247,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 
 async def async_get_device_groups(deviceUpdateGroups, async_add_entities, device_id):
-  #add to update groups if not already there
-  if device_id not in deviceUpdateGroups:
-      _LOGGER.debug("New device found: %s", device_id)
-      groups = [
-          HildebrandGlowMqttSensorUpdateGroup(device_id, async_add_entities, "electricitymeter", ELECTRICITY_SENSORS),
-          HildebrandGlowMqttSensorUpdateGroup(device_id, async_add_entities, "gasmeter", GAS_SENSORS)
-      ]
-      await async_add_entities(
-          [sensorEntity for updateGroup in groups for sensorEntity in updateGroup.all_sensors]
-      )
-      deviceUpdateGroups[device_id] = groups
+    #add to update groups if not already there
+    if device_id not in deviceUpdateGroups:
+        _LOGGER.debug("New device found: %s", device_id)
+        groups = [
+            HildebrandGlowMqttSensorUpdateGroup(device_id, "STATE", STATE_SENSORS),
+            HildebrandGlowMqttSensorUpdateGroup(device_id, "electricitymeter", ELECTRICITY_SENSORS),
+            HildebrandGlowMqttSensorUpdateGroup(device_id, "gasmeter", GAS_SENSORS)
+        ]
+        async_add_entities(
+            [sensorEntity for updateGroup in groups for sensorEntity in updateGroup.all_sensors],
+            #True
+        )
+        deviceUpdateGroups[device_id] = groups
 
-  return deviceUpdateGroups[device_id]
+    return deviceUpdateGroups[device_id]
   
 
 class HildebrandGlowMqttSensorUpdateGroup:
@@ -268,7 +290,7 @@ class HildebrandGlowMqttSensorUpdateGroup:
 class HildebrandGlowMqttSensor(SensorEntity):
     """Representation of a room sensor that is updated via MQTT."""
 
-    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func, ignore_zero_values = False) -> None:
+    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func, entity_category = EntityCategory.CONFIG, ignore_zero_values = False) -> None:
         """Initialize the sensor."""
         self._device_id = device_id
         self._ignore_zero_values = ignore_zero_values
@@ -278,12 +300,15 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._attr_device_class = device_class
         self._attr_native_unit_of_measurement = unit_of_measurement
         self._attr_state_class = state_class
+        self._attr_entity_category = entity_category
+        self._attr_should_poll = False
+        
         self._func = func        
         self._attr_device_info = DeviceInfo(
             connections={("mac", device_id)},
             manufacturer="Hildebrand Technology Limited",
             model="Glow Smart Meter IHD",
-            name=device_id,
+            name=f"Glow Smart Meter {device_id}",
         )
         self._attr_native_value = None
 
@@ -294,11 +319,10 @@ class HildebrandGlowMqttSensor(SensorEntity):
             _LOGGER.debug("Ignored new value of %s on %s.", new_value, self._attr_unique_id)
             return
         self._attr_native_value = new_value
-        self.async_write_ha_state()
+        if (self.hass is not None): # this is a hack to get around the fact that the entity is not yet initialized at first
+            self.async_schedule_update_ha_state()
 
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
-        if (self._device_id == "+"):
-          return {}
         return {ATTR_DEVICE_ID: self._device_id}
