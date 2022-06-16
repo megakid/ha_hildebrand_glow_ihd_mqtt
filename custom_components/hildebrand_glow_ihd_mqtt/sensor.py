@@ -79,7 +79,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.TOTAL_INCREASING,
-    #"value_template": "{{ value_json['electricitymeter']['energy']['export']['cumulative'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['export']['cumulative'],
   },
@@ -88,7 +87,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.TOTAL_INCREASING,
-    #"value_template": "{% if value_json['electricitymeter']['energy']['import']['cumulative'] == 0 %}\n  {{ states('sensor.smart_meter_electricity_import') }}\n{% else %}\n  {{ value_json['electricitymeter']['energy']['import']['cumulative'] }}\n{% endif %}\n",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['cumulative'],
     "ignore_zero_values": True,
@@ -98,7 +96,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['electricitymeter']['energy']['import']['day'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['day'],
   },
@@ -107,7 +104,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['electricitymeter']['energy']['import']['week'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['week'],
   },
@@ -116,7 +112,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.MEASUREMENT,
-    # "value_template": "{{ value_json['electricitymeter']['energy']['import']['month'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['energy']['import']['month'],
   },
@@ -125,7 +120,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP/kWh",
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['electricitymeter']['energy']['import']['price']['unitrate'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['electricitymeter']['energy']['import']['price']['unitrate'],
   },
@@ -134,7 +128,6 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP",
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['electricitymeter']['energy']['import']['price']['standingcharge'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['electricitymeter']['energy']['import']['price']['standingcharge'],
   },
@@ -143,9 +136,17 @@ ELECTRICITY_SENSORS = [
     "device_class": SensorDeviceClass.POWER,
     "unit_of_measurement": POWER_KILO_WATT,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['electricitymeter']['power']['value'] }}",
     "icon": "mdi:flash",
     "func": lambda js : js['electricitymeter']['power']['value'],
+  },
+  {
+    "name": "Smart Meter Electricity: Cost (Today)",
+    "device_class": SensorDeviceClass.MONETARY,
+    "unit_of_measurement": "GBP",
+    "state_class": SensorStateClass.MEASUREMENT,
+    "icon": "mdi:cash",
+    "func": lambda js : round(js['electricitymeter']['energy']['import']['price']['standingcharge'] + \
+       (js['electricitymeter']['energy']['import']['day'] * js['electricitymeter']['energy']['import']['price']['unitrate']), 2),
   }
 ]
 
@@ -155,7 +156,6 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.TOTAL_INCREASING,
-    #"value_template": "{% if value_json['gasmeter']['energy']['import']['cumulative'] == 0 %}\n  {{ states('sensor.smart_meter_gas_import') }}\n{% else %}\n  {{ value_json['gasmeter']['energy']['import']['cumulative'] }}\n{% endif %}\n",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['cumulative'],
     "ignore_zero_values": True,
@@ -165,7 +165,6 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['gasmeter']['energy']['import']['day'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['day']
   },
@@ -174,7 +173,6 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['gasmeter']['energy']['import']['week'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['week']
   },
@@ -183,7 +181,6 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['gasmeter']['energy']['import']['month'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['month']
   },
@@ -192,7 +189,6 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP/kWh",
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['gasmeter']['energy']['import']['price']['unitrate'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['gasmeter']['energy']['import']['price']['unitrate']
   },
@@ -201,7 +197,6 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.MONETARY,
     "unit_of_measurement": "GBP",
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['gasmeter']['energy']['import']['price']['standingcharge'] }}",
     "icon": "mdi:cash",
     "func": lambda js : js['gasmeter']['energy']['import']['price']['standingcharge']
   },
@@ -210,9 +205,17 @@ GAS_SENSORS = [
     "device_class": SensorDeviceClass.POWER,
     "unit_of_measurement": POWER_KILO_WATT,
     "state_class": SensorStateClass.MEASUREMENT,
-    #"value_template": "{{ value_json['gasmeter']['power']['value'] }}",
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['power']['value']
+  },
+  {
+    "name": "Smart Meter Gas: Cost (Today)",
+    "device_class": SensorDeviceClass.MONETARY,
+    "unit_of_measurement": "GBP",
+    "state_class": SensorStateClass.MEASUREMENT,
+    "icon": "mdi:cash",
+    "func": lambda js : round(js['gasmeter']['energy']['import']['price']['standingcharge'] + \
+       (js['gasmeter']['energy']['import']['day'] * js['gasmeter']['energy']['import']['price']['unitrate']), 2),
   }
 ]
 

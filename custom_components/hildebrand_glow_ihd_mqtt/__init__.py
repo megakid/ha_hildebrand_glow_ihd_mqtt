@@ -23,7 +23,6 @@ async def async_setup(hass: HomeAssistant, config: dict):
     
     return True
 
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.debug("Setting up Hildebrand Glow IHD MQTT integration")
 
@@ -31,8 +30,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN][entry.entry_id] = {}
 
     hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = entry.data[CONF_DEVICE_ID].strip().upper().replace(":", "").replace(" ", "")
-
-
 
     for component in PLATFORMS:
         hass.async_create_task(
