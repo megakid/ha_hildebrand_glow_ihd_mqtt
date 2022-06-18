@@ -3,6 +3,8 @@ from typing import Final
 
 DOMAIN: Final = "hildebrand_glow_ihd"
 
+CONF_VALUE_SCALING: Final = "value_scaling"
+
 ATTR_NAME = "name"
 ATTR_ACTIVITY = "activity"
 ATTR_BATTERY_STATE = "battery_state"

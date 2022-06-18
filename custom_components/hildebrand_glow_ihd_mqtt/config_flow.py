@@ -1,5 +1,6 @@
 """Config flow for Hildebrand Glow IHD MQTT."""
 import logging
+from typing import Optional
 
 import voluptuous as vol
 
@@ -7,7 +8,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import callback
 
-from .const import DOMAIN
+from .const import DOMAIN, CONF_VALUE_SCALING
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,8 +20,12 @@ class HildebrandGlowIHDMQTTConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
         errors = {}
         if user_input is None:
+            schema = vol.Schema({
+                vol.Required(CONF_DEVICE_ID, default='+') : str,
+                vol.Required(CONF_VALUE_SCALING, default=1) : int
+            })
             return self.async_show_form(
-                step_id="user", data_schema=vol.Schema({vol.Required(CONF_DEVICE_ID, default='+'):str}), errors=errors
+                step_id="user", data_schema=schema, errors=errors
             )
 
         device_id = user_input[CONF_DEVICE_ID]
@@ -52,5 +57,8 @@ class HildebrandGlowIHDMQTTOptionsFlowHandler(config_entries.OptionsFlow):
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
-        data_schema=vol.Schema({vol.Required(CONF_DEVICE_ID, default=self.config_entry.options.get(CONF_DEVICE_ID, "+")):str})
+        data_schema=vol.Schema({
+            vol.Required(CONF_DEVICE_ID, default=self.config_entry.options.get(CONF_DEVICE_ID, "+")) : str,
+            vol.Required(CONF_VALUE_SCALING, default=self.config_entry.options.get(CONF_VALUE_SCALING, 1)) : int
+        })
         return self.async_show_form(step_id="user", data_schema=data_schema)

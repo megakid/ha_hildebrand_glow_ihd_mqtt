@@ -2,14 +2,10 @@
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_DEVICE_ID,
-)
+from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant
 
-from .const import(
-    DOMAIN,
-)
+from .const import DOMAIN, CONF_VALUE_SCALING
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +19,7 @@ async def async_setup(hass: HomeAssistant, config: dict):
     
     return True
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     _LOGGER.debug("Setting up Hildebrand Glow IHD MQTT integration")
 
@@ -30,6 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN][entry.entry_id] = {}
 
     hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = entry.data[CONF_DEVICE_ID].strip().upper().replace(":", "").replace(" ", "")
+    hass.data[DOMAIN][entry.entry_id][CONF_VALUE_SCALING] = entry.data[CONF_VALUE_SCALING]
 
     for component in PLATFORMS:
         hass.async_create_task(
