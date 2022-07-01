@@ -20,6 +20,7 @@ from homeassistant.const import (
     ATTR_DEVICE_ID,
 
     ENERGY_KILO_WATT_HOUR,
+    VOLUME_CUBIC_METERS,
     POWER_KILO_WATT,
     SIGNAL_STRENGTH_DECIBELS,
     PERCENTAGE,
@@ -163,6 +164,39 @@ GAS_SENSORS = [
     "ignore_zero_values": True,
   },
   {
+    "name": "Smart Meter Gas: Import Vol",
+    "device_class": SensorDeviceClass.GAS,
+    "unit_of_measurement": VOLUME_CUBIC_METERS,
+    "state_class": SensorStateClass.TOTAL_INCREASING,
+    "icon": "mdi:fire",
+    "func": lambda js : js['gasmeter']['energy']['import']['cumulativevol'],
+    "ignore_zero_values": True,
+  },
+  {
+    "name": "Smart Meter Gas: Import Vol (Today)",
+    "device_class": SensorDeviceClass.ENERGY, # Change this to GAS if cubic meters is used
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR, # Might change to VOLUME_CUBIC_METERS soon
+    "state_class": SensorStateClass.TOTAL_INCREASING,
+    "icon": "mdi:fire",
+    "func": lambda js : js['gasmeter']['energy']['import']['dayvol']
+  },
+  {
+    "name": "Smart Meter Gas: Import Vol (This week)",
+    "device_class": SensorDeviceClass.ENERGY, # Change this to GAS if cubic meters is used
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR, # Might change to VOLUME_CUBIC_METERS soon
+    "state_class": SensorStateClass.TOTAL_INCREASING,
+    "icon": "mdi:fire",
+    "func": lambda js : js['gasmeter']['energy']['import']['weekvol']
+  },
+  {
+    "name": "Smart Meter Gas: Import Vol (This month)",
+    "device_class": SensorDeviceClass.ENERGY, # Change this to GAS if cubic meters is used
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR, # Might change to VOLUME_CUBIC_METERS soon
+    "state_class": SensorStateClass.TOTAL_INCREASING,
+    "icon": "mdi:fire",
+    "func": lambda js : js['gasmeter']['energy']['import']['monthvol']
+  },
+  {
     "name": "Smart Meter Gas: Import (Today)",
     "device_class": SensorDeviceClass.ENERGY,
     "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
@@ -173,7 +207,7 @@ GAS_SENSORS = [
   {
     "name": "Smart Meter Gas: Import (This week)",
     "device_class": SensorDeviceClass.ENERGY,
-    "unit_of_measurement": ENERGY_KILO_WATT_HOUR,
+    "unit_of_measurement": ENERGY_KILO_WATT_HOUR, 
     "state_class": SensorStateClass.TOTAL_INCREASING,
     "icon": "mdi:fire",
     "func": lambda js : js['gasmeter']['energy']['import']['week']
@@ -204,14 +238,15 @@ GAS_SENSORS = [
     "func": lambda js : js['gasmeter']['energy']['import']['price']['standingcharge'],
     "ignore_zero_values": True,
   },
-  {
-    "name": "Smart Meter Gas: Power",
-    "device_class": SensorDeviceClass.POWER,
-    "unit_of_measurement": POWER_KILO_WATT,
-    "state_class": SensorStateClass.MEASUREMENT,
-    "icon": "mdi:fire",
-    "func": lambda js : js['gasmeter']['power']['value']
-  },
+  # Removed June 2022 in IHD software update 1.8.13
+  # {
+  #   "name": "Smart Meter Gas: Power",
+  #   "device_class": SensorDeviceClass.POWER,
+  #   "unit_of_measurement": POWER_KILO_WATT,
+  #   "state_class": SensorStateClass.MEASUREMENT,
+  #   "icon": "mdi:fire",
+  #   "func": lambda js : js['gasmeter']['power']['value'],
+  # },
   {
     "name": "Smart Meter Gas: Cost (Today)",
     "device_class": SensorDeviceClass.MONETARY,
