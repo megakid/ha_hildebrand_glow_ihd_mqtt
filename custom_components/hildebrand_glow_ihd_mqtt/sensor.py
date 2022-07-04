@@ -22,6 +22,7 @@ from homeassistant.const import (
     ENERGY_KILO_WATT_HOUR,
     VOLUME_CUBIC_METERS,
     POWER_KILO_WATT,
+    POWER_WATT,
     SIGNAL_STRENGTH_DECIBELS,
     PERCENTAGE,
 )
@@ -137,10 +138,10 @@ ELECTRICITY_SENSORS = [
   {
     "name": "Smart Meter Electricity: Power",
     "device_class": SensorDeviceClass.POWER,
-    "unit_of_measurement": POWER_KILO_WATT,
+    "unit_of_measurement": POWER_WATT,
     "state_class": SensorStateClass.MEASUREMENT,
     "icon": "mdi:flash",
-    "func": lambda js : js['electricitymeter']['power']['value'],
+    "func": lambda js : js['electricitymeter']['power']['value'] * 1000,
   },
   {
     "name": "Smart Meter Electricity: Cost (Today)",
