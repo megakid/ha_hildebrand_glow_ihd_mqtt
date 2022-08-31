@@ -66,7 +66,7 @@ STATE_SENSORS = [
   {
     "name": "Smart Meter IHD HAN LQI",
     "device_class": None,
-    "unit_of_measurement": PERCENTAGE,
+    "unit_of_measurement": None,
     "state_class": SensorStateClass.MEASUREMENT,
     "entity_category": EntityCategory.DIAGNOSTIC,
     "icon": "mdi:wifi-strength-outline",
