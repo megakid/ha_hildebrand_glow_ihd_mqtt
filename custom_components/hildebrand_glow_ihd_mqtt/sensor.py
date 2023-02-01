@@ -253,8 +253,8 @@ GAS_SENSORS = [
     "unit_of_measurement": "GBP",
     "state_class": SensorStateClass.TOTAL_INCREASING,
     "icon": "mdi:cash",
-    "func": lambda js : round(js['gasmeter']['energy']['import']['price']['standingcharge'] + \
-       (js['gasmeter']['energy']['import']['day'] * js['gasmeter']['energy']['import']['price']['unitrate']), 2),
+    "func": lambda js : round((js['gasmeter']['energy']['import']['price']['standingcharge'] or 0)+ \
+       ((js['gasmeter']['energy']['import']['day'] or 0) * (js['gasmeter']['energy']['import']['price']['unitrate'] or 0)), 2),
   }
 ]
 
