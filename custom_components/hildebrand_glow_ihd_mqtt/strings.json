@@ -13,7 +13,8 @@
       "user": {
         "description": "Configuring Hildebrand Glow IHD Local MQTT.",
         "data": {
-          "device_id": "Device Id (leave as + to auto-detect all devices on your MQTT)"
+          "device_id": "Device Id (leave as + to auto-detect all devices on your MQTT)",
+          "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)"
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }
@@ -21,10 +22,11 @@
   },
   "options": {
     "step": {
-      "user": {
+      "init": {
         "description": "Configuring Hildebrand Glow IHD Local MQTT.",
         "data": {
-          "device_id": "Device Id (leave as + to auto-detect all devices on your MQTT)"
+          "device_id": "Device Id (leave as + to auto-detect all devices on your MQTT)",
+          "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)"
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }

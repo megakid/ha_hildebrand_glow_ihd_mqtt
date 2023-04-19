@@ -14,3 +14,4 @@ ATTR_LAST_ERROR = "last_error"
 ATTR_ERROR = "error"
 ATTR_STATE = "state"
 
+CONF_TOPIC_PREFIX = "topic_prefix"

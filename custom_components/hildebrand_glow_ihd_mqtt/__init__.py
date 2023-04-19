@@ -7,9 +7,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant
 
-from .const import(
-    DOMAIN,
-)
+from .const import DOMAIN, CONF_TOPIC_PREFIX
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,6 +28,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN][entry.entry_id] = {}
 
     hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = entry.data[CONF_DEVICE_ID].strip().upper().replace(":", "").replace(" ", "")
+    hass.data[DOMAIN][entry.entry_id][CONF_TOPIC_PREFIX] = entry.data.get(CONF_TOPIC_PREFIX, "glow").strip().replace("#", "").replace(" ", "")
 
     for component in PLATFORMS:
         hass.async_create_task(

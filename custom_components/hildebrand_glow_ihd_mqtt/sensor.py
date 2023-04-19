@@ -14,7 +14,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
-from .const import DOMAIN
+from .const import DOMAIN, CONF_TOPIC_PREFIX
 from homeassistant.const import (
     CONF_DEVICE_ID,
     ATTR_DEVICE_ID,
@@ -23,7 +23,6 @@ from homeassistant.const import (
     VOLUME_CUBIC_METERS,
     POWER_KILO_WATT,
     SIGNAL_STRENGTH_DECIBELS,
-    PERCENTAGE,
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
@@ -264,6 +263,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     # the config is defaulted to + which happens to mean we will subscribe to all devices
     device_mac = hass.data[DOMAIN][config_entry.entry_id][CONF_DEVICE_ID]
+    topic_prefix = hass.data[DOMAIN][config_entry.entry_id][CONF_TOPIC_PREFIX] or "glow"
 
     deviceUpdateGroups = {}
 
@@ -280,7 +280,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             for updateGroup in updateGroups:
                 updateGroup.process_update(message)
 
-    data_topic = "glow/#"
+    data_topic = f"{topic_prefix}/#"
 
     await mqtt.async_subscribe(
         hass, data_topic, mqtt_message_received, 1
