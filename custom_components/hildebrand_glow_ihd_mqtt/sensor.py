@@ -54,7 +54,7 @@ STATE_SENSORS = [
     "func": lambda js: js["hardware"],
   },
   {
-    "name": "Smart Meter IHD Status",
+    "name": "Smart Meter IHD HAN Status",
     "device_class": None,
     "unit_of_measurement": None,
     "state_class": None,
