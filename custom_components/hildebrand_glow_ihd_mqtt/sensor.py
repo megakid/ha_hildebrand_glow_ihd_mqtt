@@ -54,6 +54,15 @@ STATE_SENSORS = [
     "func": lambda js: js["hardware"],
   },
   {
+    "name": "Smart Meter IHD Status",
+    "device_class": None,
+    "unit_of_measurement": None,
+    "state_class": None,
+    "entity_category": EntityCategory.DIAGNOSTIC,
+    "icon": "mdi:information-outline",
+    "func": lambda js: js["han"]["status"]
+  },
+  {
     "name": "Smart Meter IHD HAN RSSI",
     "device_class": SensorDeviceClass.SIGNAL_STRENGTH,
     "unit_of_measurement": SIGNAL_STRENGTH_DECIBELS,
