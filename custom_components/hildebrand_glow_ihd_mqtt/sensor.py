@@ -341,7 +341,7 @@ class HildebrandGlowMqttSensorUpdateGroup:
 class HildebrandGlowMqttSensor(SensorEntity):
     """Representation of a room sensor that is updated via MQTT."""
 
-    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func, entity_category = EntityCategory.CONFIG, ignore_zero_values = False) -> None:
+    def __init__(self, device_id, name, icon, device_class, unit_of_measurement, state_class, func, entity_category = None, ignore_zero_values = False) -> None:
         """Initialize the sensor."""
         self._device_id = device_id
         self._ignore_zero_values = ignore_zero_values
