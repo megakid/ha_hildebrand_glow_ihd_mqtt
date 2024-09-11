@@ -27,7 +27,7 @@ from homeassistant.const import (
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.util import slugify
-from datetime import datetime, time, timedelta, tzinfo
+from datetime import datetime, time, timedelta
 from zoneinfo import ZoneInfo
 
 _LOGGER = logging.getLogger(__name__)
@@ -420,20 +420,17 @@ class HildebrandGlowMqttSensor(SensorEntity):
             self._attr_last_reset = None
             self._last_reset_reported = True
 
-    def determine_last_reset(
-        self, message_datetime: datetime, local_timezone: tzinfo
-    ) -> datetime:
-        """Return local midnight of the reset interval in UTC time zone."""
-        local_datetime = message_datetime.astimezone(local_timezone)
-        local_midnight = datetime.combine(
-            local_datetime.date(), time.min, local_datetime.tzinfo
+    def determine_last_reset(self, message_datetime: datetime) -> datetime:
+        """Return midnight of the reset interval in UTC time zone."""
+        midnight = datetime.combine(
+            message_datetime.date(), time.min, message_datetime.tzinfo
         )
         if self._reset_interval == Interval.DAY:
-            last_reset = local_midnight
+            last_reset = midnight
         elif self._reset_interval == Interval.WEEK:
-            last_reset = local_midnight - timedelta(days=local_midnight.weekday())
+            last_reset = midnight - timedelta(days=midnight.weekday())
         elif self._reset_interval == Interval.MONTH:
-            last_reset = local_midnight.replace(day=1)
+            last_reset = midnight.replace(day=1)
         return last_reset.astimezone(ZoneInfo("UTC"))
 
     def get_message_datetime(self, mqtt_data) -> datetime:
@@ -460,8 +457,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
 
         if self._last_reset_reported and self._reset_interval:
             self._attr_last_reset = self.determine_last_reset(
-                self.get_message_datetime(mqtt_data),
-                ZoneInfo(self.hass.config.time_zone),
+                self.get_message_datetime(mqtt_data)
             )
 
         if (
