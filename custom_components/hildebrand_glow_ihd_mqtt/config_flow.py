@@ -6,8 +6,8 @@ import zoneinfo
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigEntry,
-    OptionsFlow,
     CONN_CLASS_LOCAL_PUSH,
+    OptionsFlow,
 )
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import callback
@@ -21,6 +21,8 @@ from .const import (
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
+    DEFAULT_DEVICE_ID,
+    DEFAULT_TOPIC_PREFIX,
     DOMAIN,
 )
 
@@ -60,14 +62,14 @@ class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return self.async_show_form(
             step_id="user", data_schema=vol.Schema({
-                vol.Required(CONF_DEVICE_ID, default='+'):str,
-                vol.Required(CONF_TOPIC_PREFIX, default='glow'):str,
-                vol.Optional(CONF_TIME_ZONE_ELECTRICITY): SelectSelector(
+                vol.Required(CONF_DEVICE_ID, default=DEFAULT_DEVICE_ID):str,
+                vol.Required(CONF_TOPIC_PREFIX, default=DEFAULT_TOPIC_PREFIX):str,
+                vol.Required(CONF_TIME_ZONE_ELECTRICITY, default=self.hass.config.time_zone): SelectSelector(
                     SelectSelectorConfig(
                         options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                     )
                 ),
-                vol.Optional(CONF_TIME_ZONE_GAS): SelectSelector(
+                vol.Required(CONF_TIME_ZONE_GAS, default=self.hass.config.time_zone): SelectSelector(
                     SelectSelectorConfig(
                         options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                     )
@@ -100,14 +102,14 @@ class HildebrandGlowIHDMQTTOptionsFlowHandler(OptionsFlow):
             )
         )
         data_schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID, default='+'):str,
-            vol.Required(CONF_TOPIC_PREFIX, default='glow'):str,
-            vol.Optional(CONF_TIME_ZONE_ELECTRICITY): SelectSelector(
+            vol.Required(CONF_DEVICE_ID, default=self.config_entry.options.get(CONF_DEVICE_ID, DEFAULT_DEVICE_ID)):str,
+            vol.Required(CONF_TOPIC_PREFIX, default=self.config_entry.options.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)):str,
+            vol.Required(CONF_TIME_ZONE_ELECTRICITY, default=self.config_entry.options.get(CONF_TIME_ZONE_ELECTRICITY, self.hass.config.time_zone)): SelectSelector(
                 SelectSelectorConfig(
                     options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                 )
             ),
-            vol.Optional(CONF_TIME_ZONE_GAS): SelectSelector(
+            vol.Required(CONF_TIME_ZONE_GAS, default=self.config_entry.options.get(CONF_TIME_ZONE_GAS, self.hass.config.time_zone)): SelectSelector(
                 SelectSelectorConfig(
                     options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                 )

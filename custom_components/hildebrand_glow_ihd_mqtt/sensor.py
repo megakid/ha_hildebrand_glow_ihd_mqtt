@@ -32,6 +32,8 @@ from .const import (
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
+    DEFAULT_DEVICE_ID,
+    DEFAULT_TOPIC_PREFIX,
     DOMAIN,
     MeterInterval,
 )
@@ -300,7 +302,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     # the config is defaulted to + which happens to mean we will subscribe to all devices
     device_mac = hass.data[DOMAIN][config_entry.entry_id][CONF_DEVICE_ID]
-    topic_prefix = hass.data[DOMAIN][config_entry.entry_id][CONF_TOPIC_PREFIX] or "glow"
+    topic_prefix = hass.data[DOMAIN][config_entry.entry_id][CONF_TOPIC_PREFIX] or DEFAULT_TOPIC_PREFIX
     time_zone_electricity = hass.data[DOMAIN][config_entry.entry_id][
         CONF_TIME_ZONE_ELECTRICITY
     ]
@@ -314,7 +316,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         topic = message.topic
         payload = message.payload
         device_id = topic.split("/")[1]
-        if device_mac == "+" or device_id == device_mac:
+        if device_mac == DEFAULT_DEVICE_ID or device_id == device_mac:
             updateGroups = await async_get_device_groups(
                 deviceUpdateGroups,
                 async_add_entities,
