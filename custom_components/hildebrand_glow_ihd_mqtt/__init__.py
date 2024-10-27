@@ -2,12 +2,16 @@
 import logging
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    CONF_DEVICE_ID,
-)
+from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, CONF_TOPIC_PREFIX
+from .const import (
+    CONF_TIME_ZONE_ELECTRICITY,
+    CONF_TIME_ZONE_GAS,
+    CONF_TOPIC_PREFIX,
+    DEFAULT_TOPIC_PREFIX,
+    DOMAIN,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,7 +32,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN][entry.entry_id] = {}
 
     hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = entry.data[CONF_DEVICE_ID].strip().upper().replace(":", "").replace(" ", "")
-    hass.data[DOMAIN][entry.entry_id][CONF_TOPIC_PREFIX] = entry.data.get(CONF_TOPIC_PREFIX, "glow").strip().replace("#", "").replace(" ", "")
+    hass.data[DOMAIN][entry.entry_id][CONF_TOPIC_PREFIX] = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX).strip().replace("#", "").replace(" ", "")
+    hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_ELECTRICITY] = entry.data.get(CONF_TIME_ZONE_ELECTRICITY)
+    hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_GAS] = entry.data.get(CONF_TIME_ZONE_GAS)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

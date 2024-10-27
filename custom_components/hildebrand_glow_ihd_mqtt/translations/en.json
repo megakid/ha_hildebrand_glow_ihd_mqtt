@@ -14,7 +14,9 @@
         "description": "Configuring Hildebrand Glow IHD Local MQTT.",
         "data": {
           "device_id": "Device Id (leave as + to auto-detect all devices on your MQTT)",
-          "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)"
+          "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)",
+          "time_zone_electricity": "Time zone that the electrity meter uses.",
+          "time_zone_gas": "Time zone that the gas meter uses."
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }
@@ -26,7 +28,9 @@
         "description": "Configuring Hildebrand Glow IHD Local MQTT.",
         "data": {
           "device_id": "Device Id (leave as + to auto-detect all devices on your MQTT)",
-          "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)"
+          "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)",
+          "time_zone_electricity": "Time zone that the electrity meter uses.",
+          "time_zone_gas": "Time zone that the gas meter uses."
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }
