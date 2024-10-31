@@ -138,7 +138,7 @@ ELECTRICITY_SENSORS = [
         "name": "Smart Meter Electricity: Import Unit Rate",
         "device_class": SensorDeviceClass.MONETARY,
         "unit_of_measurement": "GBP/kWh",
-        "state_class": SensorStateClass.TOTAL,
+        "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:cash",
         "func": lambda js: js["electricitymeter"]["energy"]["import"]["price"][
             "unitrate"
@@ -149,7 +149,7 @@ ELECTRICITY_SENSORS = [
         "name": "Smart Meter Electricity: Import Standing Charge",
         "device_class": SensorDeviceClass.MONETARY,
         "unit_of_measurement": "GBP",
-        "state_class": SensorStateClass.TOTAL,
+        "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:cash",
         "func": lambda js: js["electricitymeter"]["energy"]["import"]["price"][
             "standingcharge"
@@ -253,7 +253,7 @@ GAS_SENSORS = [
         "name": "Smart Meter Gas: Import Unit Rate",
         "device_class": SensorDeviceClass.MONETARY,
         "unit_of_measurement": "GBP/kWh",
-        "state_class": SensorStateClass.TOTAL,
+        "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:cash",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["price"]["unitrate"],
         "ignore_zero_values": True,
@@ -262,7 +262,7 @@ GAS_SENSORS = [
         "name": "Smart Meter Gas: Import Standing Charge",
         "device_class": SensorDeviceClass.MONETARY,
         "unit_of_measurement": "GBP",
-        "state_class": SensorStateClass.TOTAL,
+        "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:cash",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["price"][
             "standingcharge"
