@@ -485,10 +485,17 @@ class HildebrandGlowMqttSensor(SensorEntity):
             return
         self._attr_native_value = new_value
 
-        if self._last_reset_reported and self._meter_interval:
+        zoneInfo = None
+        if self._time_zone:
+            zoneInfo = self._time_zone
+        elif (self.hass is not None and 
+              self.hass.config is not None):
+            zoneInfo = self.hass.config.time_zone
+            
+        if zoneInfo and self._last_reset_reported and self._meter_interval:
             self._attr_last_reset = self.determine_last_reset(
                 self.get_message_datetime(mqtt_data),
-                ZoneInfo(self._time_zone or self.hass.config.time_zone),
+                ZoneInfo(zoneInfo),
                 self._meter_interval
             )
 
