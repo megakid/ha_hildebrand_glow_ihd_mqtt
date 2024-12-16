@@ -3,7 +3,7 @@ from typing import Final
 from enum import Enum
 
 DOMAIN: Final = "hildebrand_glow_ihd"
-
+MIN_HA_VERSION = "2024.12"
 
 ATTR_NAME = "name"
 ATTR_ACTIVITY = "activity"
