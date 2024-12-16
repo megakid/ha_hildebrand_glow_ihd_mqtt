@@ -5,12 +5,10 @@ import zoneinfo
 
 from homeassistant.config_entries import (
     ConfigFlow,
-    ConfigEntry,
     CONN_CLASS_LOCAL_PUSH,
     OptionsFlow,
 )
 from homeassistant.const import CONF_DEVICE_ID
-from homeassistant.core import callback
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
