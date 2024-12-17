@@ -9,6 +9,7 @@ from homeassistant.config_entries import (
     OptionsFlow,
 )
 from homeassistant.const import CONF_DEVICE_ID
+from homeassistant.core import callback
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
@@ -75,6 +76,11 @@ class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
             }), errors=errors
         )
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return HildebrandGlowIHDMQTTOptionsFlowHandler()
 
 class HildebrandGlowIHDMQTTOptionsFlowHandler(OptionsFlow):
     """Handle a option flow for HildebrandGlowIHDMQTT."""
