@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 from datetime import datetime, time, timedelta, tzinfo
-from enum import Enum
 import json
 import logging
 import re
@@ -163,6 +162,7 @@ ELECTRICITY_SENSORS = [
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:flash",
         "func": lambda js: js["electricitymeter"]["power"]["value"],
+        "error_response_values": [-8388.608],
     },
     {
         "name": "Smart Meter Electricity: Cost (Today)",
@@ -413,6 +413,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         func,
         entity_category=None,
         ignore_zero_values=False,
+        error_response_values=None,
         meter_interval: MeterInterval | None = None,
     ) -> None:
         """Initialize the sensor."""
@@ -431,6 +432,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._func = func
         self._attr_entity_category = entity_category
         self._ignore_zero_values = ignore_zero_values
+        self._error_response_values = error_response_values
         self._meter_interval = meter_interval
         self._attr_device_info = DeviceInfo(
             connections={("mac", device_id)},
@@ -483,6 +485,13 @@ class HildebrandGlowMqttSensor(SensorEntity):
                 "Ignored new value of %s on %s.", new_value, self._attr_unique_id
             )
             return
+        if self._error_response_values and new_value in self._error_response_values:
+            _LOGGER.debug(
+                "Received error response value of %s on %s, state unknown.",
+                new_value,
+                self._attr_unique_id,
+            )
+            new_value = None
         self._attr_native_value = new_value
 
         zoneInfo = None
