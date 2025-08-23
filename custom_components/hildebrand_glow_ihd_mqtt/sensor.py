@@ -163,6 +163,7 @@ ELECTRICITY_SENSORS = [
         "state_class": SensorStateClass.MEASUREMENT,
         "icon": "mdi:flash",
         "func": lambda js: js["electricitymeter"]["power"]["value"],
+        "force_update": True,
     },
     {
         "name": "Smart Meter Electricity: Cost (Today)",
@@ -414,6 +415,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         entity_category=None,
         ignore_zero_values=False,
         meter_interval: MeterInterval | None = None,
+        force_update=False,
     ) -> None:
         """Initialize the sensor."""
         self._device_id = device_id
@@ -432,6 +434,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         self._attr_entity_category = entity_category
         self._ignore_zero_values = ignore_zero_values
         self._meter_interval = meter_interval
+        self._attr_force_update = force_update
         self._attr_device_info = DeviceInfo(
             connections={("mac", device_id)},
             manufacturer="Hildebrand Technology Limited",
