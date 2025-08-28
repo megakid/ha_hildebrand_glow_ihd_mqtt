@@ -29,10 +29,12 @@ from homeassistant.util import slugify
 
 from .const import (
     CONF_FORCE_UPDATE,
+    CONF_HIDE_GAS_SENSORS,
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
     DEFAULT_DEVICE_ID,
+    DEFAULT_HIDE_GAS_SENSORS,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
     MeterInterval,
@@ -310,6 +312,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     ]
     time_zone_gas = hass.data[DOMAIN][config_entry.entry_id][CONF_TIME_ZONE_GAS]
     force_update = hass.data[DOMAIN][config_entry.entry_id][CONF_FORCE_UPDATE]
+    hide_gas_sensors = hass.data[DOMAIN][config_entry.entry_id].get(CONF_HIDE_GAS_SENSORS, DEFAULT_HIDE_GAS_SENSORS)
 
     deviceUpdateGroups = {}
 
@@ -327,6 +330,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 time_zone_electricity,
                 time_zone_gas,
                 force_update,
+                hide_gas_sensors,
             )
             _LOGGER.debug("Received message: %s", topic)
             _LOGGER.debug("  Payload: %s", payload)
@@ -345,6 +349,7 @@ async def async_get_device_groups(
     time_zone_electricity,
     time_zone_gas,
     force_update,
+    hide_gas_sensors,
 ):
     # add to update groups if not already there
     if device_id not in deviceUpdateGroups:
@@ -358,10 +363,14 @@ async def async_get_device_groups(
                 time_zone_electricity,
                 force_update=force_update,
             ),
-            HildebrandGlowMqttSensorUpdateGroup(
-                device_id, "gasmeter", GAS_SENSORS, time_zone_gas, force_update=force_update
-            ),
         ]
+        
+        if not hide_gas_sensors:
+            groups.append(
+                HildebrandGlowMqttSensorUpdateGroup(
+                    device_id, "gasmeter", GAS_SENSORS, time_zone_gas, force_update=force_update
+                )
+            )
         async_add_entities(
             [
                 sensorEntity

@@ -18,11 +18,13 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_FORCE_UPDATE,
+    CONF_HIDE_GAS_SENSORS,
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
     DEFAULT_DEVICE_ID,
     DEFAULT_FORCE_UPDATE,
+    DEFAULT_HIDE_GAS_SENSORS,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
 )
@@ -44,6 +46,7 @@ class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
             time_zone_electricity = user_input.get(CONF_TIME_ZONE_ELECTRICITY)
             time_zone_gas = user_input.get(CONF_TIME_ZONE_GAS)
             force_update = user_input.get(CONF_FORCE_UPDATE)
+            hide_gas_sensors = user_input.get(CONF_HIDE_GAS_SENSORS)
 
             await self.async_set_unique_id('{}_{}'.format(DOMAIN, device_id))
             self._abort_if_unique_id_configured()
@@ -56,6 +59,7 @@ class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
                     CONF_TIME_ZONE_ELECTRICITY: time_zone_electricity,
                     CONF_TIME_ZONE_GAS: time_zone_gas,
                     CONF_FORCE_UPDATE: force_update,
+                    CONF_HIDE_GAS_SENSORS: hide_gas_sensors,
                 })
 
         get_timezones: list[str] = list(
@@ -78,6 +82,7 @@ class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                 ),
                 vol.Required(CONF_FORCE_UPDATE, default=DEFAULT_FORCE_UPDATE): bool,
+                vol.Required(CONF_HIDE_GAS_SENSORS, default=DEFAULT_HIDE_GAS_SENSORS): bool,
             }), errors=errors
         )
 
@@ -118,5 +123,6 @@ class HildebrandGlowIHDMQTTOptionsFlowHandler(OptionsFlow):
                 )
             ),
             vol.Required(CONF_FORCE_UPDATE, default=self.config_entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)): bool,
+            vol.Required(CONF_HIDE_GAS_SENSORS, default=self.config_entry.data.get(CONF_HIDE_GAS_SENSORS, DEFAULT_HIDE_GAS_SENSORS)): bool,
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

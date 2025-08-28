@@ -8,10 +8,12 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     CONF_FORCE_UPDATE,
+    CONF_HIDE_GAS_SENSORS,
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
     DEFAULT_FORCE_UPDATE,
+    DEFAULT_HIDE_GAS_SENSORS,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
     MIN_HA_VERSION,
@@ -49,6 +51,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_ELECTRICITY] = entry.data.get(CONF_TIME_ZONE_ELECTRICITY)
     hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_GAS] = entry.data.get(CONF_TIME_ZONE_GAS)
     hass.data[DOMAIN][entry.entry_id][CONF_FORCE_UPDATE] = entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)
+    hass.data[DOMAIN][entry.entry_id][CONF_HIDE_GAS_SENSORS] = entry.data.get(CONF_HIDE_GAS_SENSORS, DEFAULT_HIDE_GAS_SENSORS)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

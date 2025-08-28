@@ -19,10 +19,12 @@ CONF_TIME_ZONE_ELECTRICITY = "time_zone_electricity"
 CONF_TIME_ZONE_GAS = "time_zone_gas"
 CONF_TOPIC_PREFIX = "topic_prefix"
 CONF_FORCE_UPDATE = "force_update"
+CONF_HIDE_GAS_SENSORS = "hide_gas_sensors"
 
 DEFAULT_DEVICE_ID = "+"
 DEFAULT_TOPIC_PREFIX= "glow"
 DEFAULT_FORCE_UPDATE = False
+DEFAULT_HIDE_GAS_SENSORS = False
 
 # Meter intervals
 class MeterInterval(Enum):
