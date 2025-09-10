@@ -203,24 +203,24 @@ GAS_SENSORS = [
     },
     {
         "name": "Smart Meter Gas: Import Vol (Today)",
-        "device_class": SensorDeviceClass.ENERGY,  # Change this to GAS if cubic meters is used
-        "unit_of_measurement": UnitOfEnergy.KILO_WATT_HOUR,  # Might change to VOLUME_CUBIC_METERS soon
+        "device_class": SensorDeviceClass.GAS,
+        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
         "state_class": SensorStateClass.TOTAL_INCREASING,
         "icon": "mdi:fire",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["dayvol"],
     },
     {
         "name": "Smart Meter Gas: Import Vol (This week)",
-        "device_class": SensorDeviceClass.ENERGY,  # Change this to GAS if cubic meters is used
-        "unit_of_measurement": UnitOfEnergy.KILO_WATT_HOUR,  # Might change to VOLUME_CUBIC_METERS soon
+        "device_class": SensorDeviceClass.GAS,
+        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
         "state_class": SensorStateClass.TOTAL_INCREASING,
         "icon": "mdi:fire",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["weekvol"],
     },
     {
         "name": "Smart Meter Gas: Import Vol (This month)",
-        "device_class": SensorDeviceClass.ENERGY,  # Change this to GAS if cubic meters is used
-        "unit_of_measurement": UnitOfEnergy.KILO_WATT_HOUR,  # Might change to VOLUME_CUBIC_METERS soon
+        "device_class": SensorDeviceClass.GAS,
+        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
         "state_class": SensorStateClass.TOTAL_INCREASING,
         "icon": "mdi:fire",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["monthvol"],
