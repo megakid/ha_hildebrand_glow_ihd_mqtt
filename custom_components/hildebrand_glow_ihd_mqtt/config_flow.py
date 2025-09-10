@@ -14,6 +14,7 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    BooleanSelector,
 )
 
 from .const import (
@@ -77,7 +78,7 @@ class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
                         options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                     )
                 ),
-                vol.Required(CONF_FORCE_UPDATE, default=DEFAULT_FORCE_UPDATE): bool,
+                vol.Required(CONF_FORCE_UPDATE, default=DEFAULT_FORCE_UPDATE): BooleanSelector(),
             }), errors=errors
         )
 
@@ -105,18 +106,48 @@ class HildebrandGlowIHDMQTTOptionsFlowHandler(OptionsFlow):
             )
         )
         data_schema=vol.Schema({
-            vol.Required(CONF_DEVICE_ID, default=self.config_entry.data.get(CONF_DEVICE_ID, DEFAULT_DEVICE_ID)):str,
-            vol.Required(CONF_TOPIC_PREFIX, default=self.config_entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)):str,
-            vol.Required(CONF_TIME_ZONE_ELECTRICITY, default=self.config_entry.data.get(CONF_TIME_ZONE_ELECTRICITY, self.hass.config.time_zone)): SelectSelector(
+            vol.Required(
+                CONF_DEVICE_ID,
+                default=self.config_entry.options.get(
+                    CONF_DEVICE_ID,
+                    self.config_entry.data.get(CONF_DEVICE_ID, DEFAULT_DEVICE_ID),
+                ),
+            ):str,
+            vol.Required(
+                CONF_TOPIC_PREFIX,
+                default=self.config_entry.options.get(
+                    CONF_TOPIC_PREFIX,
+                    self.config_entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX),
+                ),
+            ):str,
+            vol.Required(
+                CONF_TIME_ZONE_ELECTRICITY,
+                default=self.config_entry.options.get(
+                    CONF_TIME_ZONE_ELECTRICITY,
+                    self.config_entry.data.get(CONF_TIME_ZONE_ELECTRICITY, self.hass.config.time_zone),
+                ),
+            ): SelectSelector(
                 SelectSelectorConfig(
                     options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                 )
             ),
-            vol.Required(CONF_TIME_ZONE_GAS, default=self.config_entry.data.get(CONF_TIME_ZONE_GAS, self.hass.config.time_zone)): SelectSelector(
+            vol.Required(
+                CONF_TIME_ZONE_GAS,
+                default=self.config_entry.options.get(
+                    CONF_TIME_ZONE_GAS,
+                    self.config_entry.data.get(CONF_TIME_ZONE_GAS, self.hass.config.time_zone),
+                ),
+            ): SelectSelector(
                 SelectSelectorConfig(
                     options=get_timezones, mode=SelectSelectorMode.DROPDOWN, sort=True
                 )
             ),
-            vol.Required(CONF_FORCE_UPDATE, default=self.config_entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)): bool,
+            vol.Required(
+                CONF_FORCE_UPDATE,
+                default=self.config_entry.options.get(
+                    CONF_FORCE_UPDATE,
+                    self.config_entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE),
+                ),
+            ): BooleanSelector(),
         })
         return self.async_show_form(step_id="init", data_schema=data_schema)

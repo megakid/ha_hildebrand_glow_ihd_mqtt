@@ -44,14 +44,52 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     if entry.entry_id not in hass.data[DOMAIN]:
         hass.data[DOMAIN][entry.entry_id] = {}
 
-    hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = entry.data[CONF_DEVICE_ID].strip().upper().replace(":", "").replace(" ", "")
-    hass.data[DOMAIN][entry.entry_id][CONF_TOPIC_PREFIX] = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX).strip().replace("#", "").replace(" ", "")
-    hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_ELECTRICITY] = entry.data.get(CONF_TIME_ZONE_ELECTRICITY)
-    hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_GAS] = entry.data.get(CONF_TIME_ZONE_GAS)
-    hass.data[DOMAIN][entry.entry_id][CONF_FORCE_UPDATE] = entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)
+    # Prefer options over data so users can adjust settings via Options Flow
+    device_id_raw = entry.options.get(CONF_DEVICE_ID, entry.data[CONF_DEVICE_ID])
+    topic_prefix_raw = entry.options.get(
+        CONF_TOPIC_PREFIX, entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX)
+    )
+    time_zone_electricity = entry.options.get(
+        CONF_TIME_ZONE_ELECTRICITY, entry.data.get(CONF_TIME_ZONE_ELECTRICITY)
+    )
+    time_zone_gas = entry.options.get(
+        CONF_TIME_ZONE_GAS, entry.data.get(CONF_TIME_ZONE_GAS)
+    )
+    force_update = entry.options.get(
+        CONF_FORCE_UPDATE, entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)
+    )
+
+    hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = (
+        device_id_raw.strip().upper().replace(":", "").replace(" ", "")
+    )
+    hass.data[DOMAIN][entry.entry_id][CONF_TOPIC_PREFIX] = (
+        topic_prefix_raw.strip().replace("#", "").replace(" ", "")
+    )
+    hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_ELECTRICITY] = time_zone_electricity
+    hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_GAS] = time_zone_gas
+    hass.data[DOMAIN][entry.entry_id][CONF_FORCE_UPDATE] = force_update
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+    # Reload entry on options update
+    entry.async_on_unload(entry.add_update_listener(_async_entry_update_listener))
 
     _LOGGER.debug("Finished setting up Hildebrand Glow IHD MQTT integration")
     return True
 
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        try:
+            del hass.data[DOMAIN][entry.entry_id]
+        except KeyError:
+            pass
+    return unload_ok
+
+
+async def _async_entry_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Handle config entry options update by reloading the entry."""
+    await hass.config_entries.async_reload(entry.entry_id)
+    return None

@@ -388,15 +388,18 @@ class HildebrandGlowMqttSensorUpdateGroup:
     ) -> None:
         """Initialize the sensor collection."""
         self._topic_regex = re.compile(topic_regex)
-        self._sensors = [
-            HildebrandGlowMqttSensor(
-                **meter,
-                device_id=device_id, 
-                time_zone=time_zone, 
-                force_update=force_update, 
+        self._sensors = []
+        for meter in meters:
+            meter_kwargs = dict(meter)
+            per_sensor_force_update = force_update or meter_kwargs.pop("force_update_candidate", False)
+            self._sensors.append(
+                HildebrandGlowMqttSensor(
+                    **meter_kwargs,
+                    device_id=device_id,
+                    time_zone=time_zone,
+                    force_update=per_sensor_force_update,
+                )
             )
-            for meter in meters
-        ]
 
     def process_update(self, message: ReceiveMessage) -> None:
         """Process an update from the MQTT broker."""
