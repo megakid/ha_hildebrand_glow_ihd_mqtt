@@ -28,6 +28,7 @@ from homeassistant.helpers.entity import DeviceInfo, EntityCategory
 from homeassistant.util import slugify
 
 from .const import (
+    CONF_FORCE_UPDATE,
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
@@ -163,6 +164,7 @@ ELECTRICITY_SENSORS = [
         "icon": "mdi:flash",
         "func": lambda js: js["electricitymeter"]["power"]["value"],
         "error_response_values": [-8388.608],
+        "force_update_candidate": True,
     },
     {
         "name": "Smart Meter Electricity: Cost (Today)",
@@ -307,6 +309,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         CONF_TIME_ZONE_ELECTRICITY
     ]
     time_zone_gas = hass.data[DOMAIN][config_entry.entry_id][CONF_TIME_ZONE_GAS]
+    force_update = hass.data[DOMAIN][config_entry.entry_id][CONF_FORCE_UPDATE]
 
     deviceUpdateGroups = {}
 
@@ -323,6 +326,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 device_id,
                 time_zone_electricity,
                 time_zone_gas,
+                force_update,
             )
             _LOGGER.debug("Received message: %s", topic)
             _LOGGER.debug("  Payload: %s", payload)
@@ -340,20 +344,22 @@ async def async_get_device_groups(
     device_id,
     time_zone_electricity,
     time_zone_gas,
+    force_update,
 ):
     # add to update groups if not already there
     if device_id not in deviceUpdateGroups:
         _LOGGER.debug("New device found: %s", device_id)
         groups = [
-            HildebrandGlowMqttSensorUpdateGroup(device_id, "STATE", STATE_SENSORS),
+            HildebrandGlowMqttSensorUpdateGroup(device_id, "STATE", STATE_SENSORS, force_update=force_update),
             HildebrandGlowMqttSensorUpdateGroup(
                 device_id,
                 "electricitymeter",
                 ELECTRICITY_SENSORS,
                 time_zone_electricity,
+                force_update=force_update,
             ),
             HildebrandGlowMqttSensorUpdateGroup(
-                device_id, "gasmeter", GAS_SENSORS, time_zone_gas
+                device_id, "gasmeter", GAS_SENSORS, time_zone_gas, force_update=force_update
             ),
         ]
         async_add_entities(
@@ -373,14 +379,27 @@ class HildebrandGlowMqttSensorUpdateGroup:
     """Representation of Hildebrand Glow MQTT Meter Sensors that all get updated together."""
 
     def __init__(
-        self, device_id: str, topic_regex: str, meters: Iterable, time_zone: str | None = None
+        self, 
+        device_id: str, 
+        topic_regex: str, 
+        meters: Iterable, 
+        time_zone: str | None = None, 
+        force_update: bool = False,
     ) -> None:
         """Initialize the sensor collection."""
         self._topic_regex = re.compile(topic_regex)
-        self._sensors = [
-            HildebrandGlowMqttSensor(device_id=device_id, time_zone=time_zone, **meter)
-            for meter in meters
-        ]
+        self._sensors = []
+        for meter in meters:
+            meter_kwargs = dict(meter)
+            per_sensor_force_update = force_update or meter_kwargs.pop("force_update_candidate", False)
+            self._sensors.append(
+                HildebrandGlowMqttSensor(
+                    **meter_kwargs,
+                    device_id=device_id,
+                    time_zone=time_zone,
+                    force_update=per_sensor_force_update,
+                )
+            )
 
     def process_update(self, message: ReceiveMessage) -> None:
         """Process an update from the MQTT broker."""
@@ -415,6 +434,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
         ignore_zero_values=False,
         error_response_values=None,
         meter_interval: MeterInterval | None = None,
+        force_update=False,
     ) -> None:
         """Initialize the sensor."""
         self._device_id = device_id
@@ -429,6 +449,7 @@ class HildebrandGlowMqttSensor(SensorEntity):
             self._attr_state_class = state_class
         self._attr_unique_id = slugify(device_id + "_" + name)
         self._attr_should_poll = False
+        self._attr_force_update = force_update
         self._func = func
         self._attr_entity_category = entity_category
         self._ignore_zero_values = ignore_zero_values
