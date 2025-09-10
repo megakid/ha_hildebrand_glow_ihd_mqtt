@@ -8,10 +8,12 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     CONF_FORCE_UPDATE,
+    CONF_HIDE_GAS_SENSORS,
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
     DEFAULT_FORCE_UPDATE,
+    DEFAULT_HIDE_GAS_SENSORS,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
     MIN_HA_VERSION,
@@ -58,6 +60,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     force_update = entry.options.get(
         CONF_FORCE_UPDATE, entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)
     )
+    hide_gas_sensors = entry.options.get(
+        CONF_HIDE_GAS_SENSORS, entry.data.get(CONF_HIDE_GAS_SENSORS, DEFAULT_HIDE_GAS_SENSORS)
+    )
 
     hass.data[DOMAIN][entry.entry_id][CONF_DEVICE_ID] = (
         device_id_raw.strip().upper().replace(":", "").replace(" ", "")
@@ -68,6 +73,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_ELECTRICITY] = time_zone_electricity
     hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_GAS] = time_zone_gas
     hass.data[DOMAIN][entry.entry_id][CONF_FORCE_UPDATE] = force_update
+    hass.data[DOMAIN][entry.entry_id][CONF_HIDE_GAS_SENSORS] = hide_gas_sensors
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

@@ -17,7 +17,8 @@
           "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)",
           "time_zone_electricity": "Time zone that the electrity meter uses.",
           "time_zone_gas": "Time zone that the gas meter uses.",
-          "force_update": "Force update sensors (enables better graphing for power/energy sensors that may have duplicate values)"
+          "force_update": "Force update sensors (enables better graphing for power/energy sensors that may have duplicate values)",
+          "hide_gas_sensors": "Hide gas sensors (enable if you have no gas supply)"
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }
@@ -32,7 +33,8 @@
           "topic_prefix": "Topic Prefix (leaving as 'glow' is usually the right thing to do!)",
           "time_zone_electricity": "Time zone that the electrity meter uses.",
           "time_zone_gas": "Time zone that the gas meter uses.",
-          "force_update": "Force update sensors (enables better graphing for power/energy sensors that may have duplicate values)"
+          "force_update": "Force update sensors (enables better graphing for power/energy sensors that may have duplicate values)",
+          "hide_gas_sensors": "Hide gas sensors (enable if you have no gas supply)"
         },
         "title": "Hildebrand Glow IHD Local MQTT"
       }
