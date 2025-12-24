@@ -7,6 +7,8 @@ Inspired and heavily based on [@robertalexa](https://github.com/robertalexa) for
 
 ## Installation & Usage
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=megakid&repository=ha_hildebrand_glow_ihd_mqtt&category=Integration)
+
 1. Install MQTT Addon (https://home-assistant.io/components/mqtt/) - required for this integration to work
 2. Buy a Hildebrand Glow IHD device (https://shop.glowmarkt.com/products/display-and-cad-combined-for-smart-meter-customers)
 3. Follow this blog post to connect the Hildebrand Glow IHD device (https://medium.com/@joshua.cooper/glow-local-mqtt-f69b776b7af4)
