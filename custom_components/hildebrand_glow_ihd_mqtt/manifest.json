@@ -1,11 +1,11 @@
 {
-    "domain": "hildebrand_glow_ihd",
-    "name": "Hildebrand Glow IHD MQTT",
-    "documentation": "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt",
-    "issue_tracker": "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt/issues",
-    "codeowners": ["@megakid"],
-    "dependencies": ["mqtt"],
-    "iot_class": "local_push",
-    "config_flow": true,
-    "version": "1.1.0"
-  }
+  "domain": "hildebrand_glow_ihd",
+  "name": "Hildebrand Glow IHD MQTT",
+  "documentation": "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt",
+  "issue_tracker": "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt/issues",
+  "codeowners": ["@megakid"],
+  "dependencies": ["mqtt"],
+  "iot_class": "local_push",
+  "config_flow": true,
+  "version": "1.9.0"
+}

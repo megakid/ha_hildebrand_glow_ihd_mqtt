@@ -7,9 +7,11 @@ from homeassistant.const import __version__ as HA_VERSION, CONF_DEVICE_ID  # noq
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CONF_FORCE_UPDATE,
     CONF_TIME_ZONE_ELECTRICITY,
     CONF_TIME_ZONE_GAS,
     CONF_TOPIC_PREFIX,
+    DEFAULT_FORCE_UPDATE,
     DEFAULT_TOPIC_PREFIX,
     DOMAIN,
     MIN_HA_VERSION,
@@ -46,6 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][entry.entry_id][CONF_TOPIC_PREFIX] = entry.data.get(CONF_TOPIC_PREFIX, DEFAULT_TOPIC_PREFIX).strip().replace("#", "").replace(" ", "")
     hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_ELECTRICITY] = entry.data.get(CONF_TIME_ZONE_ELECTRICITY)
     hass.data[DOMAIN][entry.entry_id][CONF_TIME_ZONE_GAS] = entry.data.get(CONF_TIME_ZONE_GAS)
+    hass.data[DOMAIN][entry.entry_id][CONF_FORCE_UPDATE] = entry.data.get(CONF_FORCE_UPDATE, DEFAULT_FORCE_UPDATE)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
