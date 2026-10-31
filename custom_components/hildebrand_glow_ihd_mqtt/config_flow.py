@@ -5,7 +5,6 @@ import zoneinfo
 
 from homeassistant.config_entries import (
     ConfigFlow,
-    CONN_CLASS_LOCAL_PUSH,
     OptionsFlow,
 )
 from homeassistant.const import CONF_DEVICE_ID
@@ -30,7 +29,6 @@ _LOGGER = logging.getLogger(__name__)
 class HildebrandGlowIHDMQTTConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
     MINOR_VERSION = 1
-    CONNECTION_CLASS = CONN_CLASS_LOCAL_PUSH
     
     async def async_step_user(self, user_input=None):
         """Handle the initial step."""
