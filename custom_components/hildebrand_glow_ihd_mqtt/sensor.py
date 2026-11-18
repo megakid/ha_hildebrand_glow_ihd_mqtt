@@ -43,6 +43,22 @@ _LOGGER = logging.getLogger(__name__)
 # glow/XXXXXXYYYYYY/SENSOR/electricitymeter {"electricitymeter":{"timestamp":"2022-06-11T20:38:00Z","energy":{"export":{"cumulative":0.000,"units":"kWh"},"import":{"cumulative":6613.405,"day":13.252,"week":141.710,"month":293.598,"units":"kWh","mpan":"1234","supplier":"ABC ENERGY","price":{"unitrate":0.04998,"standingcharge":0.24030}}},"power":{"value":0.951,"units":"kW"}}}
 # glow/XXXXXXYYYYYY/SENSOR/gasmeter         {"gasmeter":{"timestamp":"2022-06-11T20:53:52Z","energy":{"export":{"cumulative":0.000,"units":"kWh"},"import":{"cumulative":17940.852,"day":11.128,"week":104.749,"month":217.122,"units":"kWh","mprn":"1234","supplier":"---","price":{"unitrate":0.07320,"standingcharge":0.17850}}},"power":{"value":0.000,"units":"kW"}}}
 
+def _electricity_cost_today(meter: dict) -> float | None:
+    """Return today's cost, or None while the meter has not published its prices.
+
+    Some suppliers (and an IHD that has not been provisioned yet) publish null
+    for the unit rate and standing charge.
+    """
+    import_ = meter["energy"]["import"]
+    price = import_["price"]
+    standing_charge = price["standingcharge"]
+    unit_rate = price["unitrate"]
+    day = import_["day"]
+    if standing_charge is None or unit_rate is None or day is None:
+        return None
+    return round(standing_charge + day * unit_rate, 2)
+
+
 STATE_SENSORS = [
     {
         "name": "Smart Meter IHD Software Version",
@@ -171,14 +187,7 @@ ELECTRICITY_SENSORS = [
         "state_class": SensorStateClass.TOTAL,
         "icon": "mdi:cash",
         "meter_interval": MeterInterval.DAY,
-        "func": lambda js: round(
-            js["electricitymeter"]["energy"]["import"]["price"]["standingcharge"]
-            + (
-                js["electricitymeter"]["energy"]["import"]["day"]
-                * js["electricitymeter"]["energy"]["import"]["price"]["unitrate"]
-            ),
-            2,
-        ),
+        "func": lambda js: _electricity_cost_today(js["electricitymeter"]),
     },
 ]
 
@@ -474,12 +483,22 @@ class HildebrandGlowMqttSensor(SensorEntity):
         )
         try:
             return datetime.fromisoformat(timestamp)
-        except TypeError | ValueError:
+        except (TypeError, ValueError):
             raise ValueError("Valid timestamp not present in MQTT data.")
 
     def process_update(self, mqtt_data) -> None:
         """Update the state of the sensor."""
-        new_value = self._func(mqtt_data)
+        try:
+            new_value = self._func(mqtt_data)
+        except (KeyError, TypeError) as err:
+            # A payload without this field must not break the other sensors or
+            # flood the log, so keep the previous state.
+            _LOGGER.debug(
+                "Skipped update of %s, payload is missing a value: %r",
+                self._attr_unique_id,
+                err,
+            )
+            return
         if self._ignore_zero_values and new_value == 0:
             _LOGGER.debug(
                 "Ignored new value of %s on %s.", new_value, self._attr_unique_id
@@ -502,11 +521,17 @@ class HildebrandGlowMqttSensor(SensorEntity):
             zoneInfo = self.hass.config.time_zone
             
         if zoneInfo and self._last_reset_reported and self._meter_interval:
-            self._attr_last_reset = self.determine_last_reset(
-                self.get_message_datetime(mqtt_data),
-                ZoneInfo(zoneInfo),
-                self._meter_interval
-            )
+            try:
+                message_datetime = self.get_message_datetime(mqtt_data)
+            except ValueError:
+                _LOGGER.debug(
+                    "No valid timestamp for %s, keeping the previous last_reset.",
+                    self._attr_unique_id,
+                )
+            else:
+                self._attr_last_reset = self.determine_last_reset(
+                    message_datetime, ZoneInfo(zoneInfo), self._meter_interval
+                )
 
         if (
             self.hass is not None
