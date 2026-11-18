@@ -17,3 +17,26 @@ Inspired and heavily based on [@robertalexa](https://github.com/robertalexa) for
 8. Your various `sensor`s will be named something like `sensor.smart_meter...` grouped as devices.
 
 ![image](https://user-images.githubusercontent.com/1478003/173249987-4724af89-ceaa-4422-a426-4b8a2b16d98e.png)
+
+
+## Electricity cost with changing tariffs
+
+`Smart Meter Electricity: Cost (Today)` accumulates each increase in daily
+consumption at the previously observed unit rate, plus the current standing
+charge. A new tariff therefore applies to subsequent consumption instead of
+repricing the whole day's usage. The accumulator and meter-day reset are
+restored after a Home Assistant restart.
+
+On first use without saved history, or on the first reading of a new meter day,
+consumption already recorded that day is valued at the current rate. The
+`cost_estimated` attribute marks this initial estimate when consumption is
+non-zero. This attribute is not an accuracy guarantee: rate changes between
+messages or while Home Assistant is offline cannot be reconstructed; usage
+across such gaps is valued at the last observed rate. This sensor is an estimate,
+not a replacement for supplier billing.
+
+Null or invalid prices/readings produce `unknown` without discarding the last
+valid accumulator. Missing fields or timestamps leave the previous state intact.
+Out-of-order readings are ignored; a decreasing daily counter within the same
+meter day produces `unknown` until it catches up, avoiding double counting.
+The configured electricity meter timezone controls the daily reset.
