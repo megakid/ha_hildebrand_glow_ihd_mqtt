@@ -11,7 +11,7 @@ Inspired and heavily based on [@robertalexa](https://github.com/robertalexa) for
 2. Buy a Hildebrand Glow IHD device (https://shop.glowmarkt.com/products/display-and-cad-combined-for-smart-meter-customers)
 3. Follow this blog post to connect the Hildebrand Glow IHD device (https://medium.com/@joshua.cooper/glow-local-mqtt-f69b776b7af4)
 4. Add repository to HACS (see https://hacs.xyz/docs/faq/custom_repositories) - use "https://github.com/megakid/ha_hildebrand_glow_ihd_mqtt" as the repository URL.
-5. Install the `hildebrand_glow_ihd_mqtt` integration inside HACS
+5. Install the "Hildebrand Glow IHD MQTT" integration inside HACS
 6. Restart HA
 7. Add Hildebrand Glow IHD MQTT integration using the normal HA integration configuration screen - note if you leave the Device ID as '+' it will automatically detect all Hildebrand Glow IHD devices publishing to your MQTT - this is the recommended way.
 8. Your various `sensor`s will be named something like `sensor.smart_meter...` grouped as devices.
