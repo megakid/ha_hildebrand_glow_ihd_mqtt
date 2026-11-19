@@ -1,7 +1,6 @@
 {
     "name": "Hildebrand Glow IHD MQTT",
     "render_readme": true,
-    "domains": ["sensor"],
     "country": ["GB"],
     "homeassistant": "2026.4.0"
 }

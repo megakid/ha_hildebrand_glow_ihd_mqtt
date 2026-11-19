@@ -1,0 +1,29 @@
+name: HACS
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: {}
+
+jobs:
+  validate:
+    name: HACS Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+          # Ignore repository-level checks that currently fail until a LICENSE
+          # file and GitHub repository topics are added to the repository.
+          ignore: license topics

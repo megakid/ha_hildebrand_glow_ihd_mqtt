@@ -1,0 +1,3 @@
+[run]
+source = custom_components/hildebrand_glow_ihd_mqtt
+relative_files = true
