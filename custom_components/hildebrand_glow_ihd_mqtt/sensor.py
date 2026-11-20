@@ -6,13 +6,13 @@ import json
 import logging
 import math
 import re
-from typing import Iterable
+from typing import Callable, Iterable
 from zoneinfo import ZoneInfo
 
 from homeassistant.components import mqtt
 from homeassistant.components.mqtt.models import ReceiveMessage
 from homeassistant.components.sensor import (
-    SensorEntity,
+    RestoreSensor,
     SensorDeviceClass,
     SensorStateClass,
 )
@@ -59,6 +59,28 @@ def _electricity_cost_today(meter: dict) -> float | None:
     if standing_charge is None or unit_rate is None or day is None:
         return None
     return round(standing_charge + day * unit_rate, 2)
+
+
+# The IHD reports the day/week/month gas volumes (dayvol, weekvol, monthvol) in
+# the unit named by dayweekmonthvolunits: kWh on most devices, where they repeat
+# day/week/month, and m3 on others (#98). The cumulative volume is always m3.
+GAS_PERIOD_VOLUME_UNITS = {
+    "kWh": (SensorDeviceClass.ENERGY, UnitOfEnergy.KILO_WATT_HOUR),
+    "m3": (SensorDeviceClass.GAS, UnitOfVolume.CUBIC_METERS),
+}
+
+GAS_PERIOD_VOLUME = {
+    # Until the first gas message (or a restored state) says otherwise, kWh, the
+    # unit these sensors had before 1.9.2. Payloads without the field stay kWh.
+    "device_class": SensorDeviceClass.ENERGY,
+    "unit_of_measurement": UnitOfEnergy.KILO_WATT_HOUR,
+    "units_func": lambda js: js["gasmeter"]["energy"]["import"].get(
+        "dayweekmonthvolunits", "kWh"
+    ),
+    "units_by_name": GAS_PERIOD_VOLUME_UNITS,
+    "state_class": SensorStateClass.TOTAL_INCREASING,
+    "icon": "mdi:fire",
+}
 
 
 STATE_SENSORS = [
@@ -213,27 +235,18 @@ GAS_SENSORS = [
         "ignore_zero_values": True,
     },
     {
+        **GAS_PERIOD_VOLUME,
         "name": "Smart Meter Gas: Import Vol (Today)",
-        "device_class": SensorDeviceClass.GAS,
-        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
-        "state_class": SensorStateClass.TOTAL_INCREASING,
-        "icon": "mdi:fire",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["dayvol"],
     },
     {
+        **GAS_PERIOD_VOLUME,
         "name": "Smart Meter Gas: Import Vol (This week)",
-        "device_class": SensorDeviceClass.GAS,
-        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
-        "state_class": SensorStateClass.TOTAL_INCREASING,
-        "icon": "mdi:fire",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["weekvol"],
     },
     {
+        **GAS_PERIOD_VOLUME,
         "name": "Smart Meter Gas: Import Vol (This month)",
-        "device_class": SensorDeviceClass.GAS,
-        "unit_of_measurement": UnitOfVolume.CUBIC_METERS,
-        "state_class": SensorStateClass.TOTAL_INCREASING,
-        "icon": "mdi:fire",
         "func": lambda js: js["gasmeter"]["energy"]["import"]["monthvol"],
     },
     {
@@ -409,7 +422,7 @@ class HildebrandGlowMqttSensorUpdateGroup:
         return self._sensors
 
 
-class HildebrandGlowMqttSensor(RestoreEntity, SensorEntity):
+class HildebrandGlowMqttSensor(RestoreSensor):
     """Representation of a room sensor that is updated via MQTT."""
 
     def __init__(
@@ -426,6 +439,8 @@ class HildebrandGlowMqttSensor(RestoreEntity, SensorEntity):
         ignore_zero_values=False,
         error_response_values=None,
         meter_interval: MeterInterval | None = None,
+        units_func: Callable[[dict], str] | None = None,
+        units_by_name: dict[str, tuple[SensorDeviceClass, str]] | None = None,
     ) -> None:
         """Initialize the sensor."""
         self._device_id = device_id
@@ -445,6 +460,9 @@ class HildebrandGlowMqttSensor(RestoreEntity, SensorEntity):
         self._ignore_zero_values = ignore_zero_values
         self._error_response_values = error_response_values
         self._meter_interval = meter_interval
+        self._units_func = units_func
+        self._units_by_name = units_by_name
+        self._units_reported = False
         self._attr_device_info = DeviceInfo(
             connections={("mac", device_id)},
             manufacturer="Hildebrand Technology Limited",
@@ -586,6 +604,19 @@ class HildebrandGlowMqttSensor(RestoreEntity, SensorEntity):
         except (TypeError, ValueError):
             raise ValueError("Valid timestamp not present in MQTT data.")
 
+    async def async_added_to_hass(self) -> None:
+        """Restore the unit the IHD reported before Home Assistant restarted."""
+        await super().async_added_to_hass()
+        if not self._units_by_name or self._units_reported:
+            return
+        last_sensor_data = await self.async_get_last_sensor_data()
+        if last_sensor_data is None:
+            return
+        for device_class, unit in self._units_by_name.values():
+            if unit == last_sensor_data.native_unit_of_measurement:
+                self._attr_device_class = device_class
+                self._attr_native_unit_of_measurement = unit
+
     def process_update(self, mqtt_data) -> None:
         """Update the state of the sensor."""
         if self._is_incremental_cost:
@@ -593,15 +624,21 @@ class HildebrandGlowMqttSensor(RestoreEntity, SensorEntity):
             return
         try:
             new_value = self._func(mqtt_data)
+            if self._units_by_name:
+                units = self._units_by_name[self._units_func(mqtt_data)]
         except (KeyError, TypeError) as err:
-            # A payload without this field must not break the other sensors or
-            # flood the log, so keep the previous state.
+            # A payload without this field, or in a unit this integration does
+            # not know, must not break the other sensors or flood the log, so
+            # keep the previous state.
             _LOGGER.debug(
-                "Skipped update of %s, payload is missing a value: %r",
+                "Skipped update of %s, payload has no usable value: %r",
                 self._attr_unique_id,
                 err,
             )
             return
+        if self._units_by_name:
+            self._attr_device_class, self._attr_native_unit_of_measurement = units
+            self._units_reported = True
         if self._ignore_zero_values and new_value == 0:
             _LOGGER.debug(
                 "Ignored new value of %s on %s.", new_value, self._attr_unique_id
