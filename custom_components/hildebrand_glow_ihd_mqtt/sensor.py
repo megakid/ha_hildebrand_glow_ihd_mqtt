@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, time, timedelta, tzinfo
 import json
 import logging
+import math
 import re
 from typing import Callable, Iterable
 from zoneinfo import ZoneInfo
@@ -25,6 +26,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 from homeassistant.helpers.entity import DeviceInfo, EntityCategory
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 
 from .const import (
@@ -467,10 +469,108 @@ class HildebrandGlowMqttSensor(RestoreSensor):
             model="Glow Smart Meter IHD",
             name=f"Glow Smart Meter {device_id}",
         )
+        self._is_incremental_cost = name == "Smart Meter Electricity: Cost (Today)"
+        self._cost_accum = None
+        self._prev_kwh = None
+        self._prev_rate = None
+        self._last_reset_utc = None
+        self._last_cost_timestamp = None
+        self._cost_estimated = False
+        self._cost_ready = False
+        self._pending_cost_data = None
+        self._last_reset_reported = False
         self._attr_native_value = None
         if state_class == SensorStateClass.TOTAL and meter_interval:
             self._attr_last_reset = None
             self._last_reset_reported = True
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the accumulator before processing the first MQTT reading."""
+        await super().async_added_to_hass()
+        if not self._is_incremental_cost:
+            return
+        last_state = await self.async_get_last_state()
+        if last_state:
+            attrs = last_state.attributes
+            accum = _finite_float(attrs.get("cost_accum"))
+            kwh = _finite_float(attrs.get("prev_kwh"))
+            rate = _finite_float(attrs.get("prev_rate"))
+            reset = _aware_datetime(attrs.get("last_reset_utc"))
+            if accum is not None and kwh is not None and kwh >= 0 and rate is not None and reset:
+                self._cost_accum = accum
+                self._prev_kwh = kwh
+                self._prev_rate = rate
+                self._last_reset_utc = reset.isoformat()
+                self._attr_last_reset = reset
+                self._last_cost_timestamp = _aware_datetime(attrs.get("last_cost_timestamp"))
+                self._cost_estimated = bool(attrs.get("cost_estimated", False))
+                self._attr_native_value = _finite_float(last_state.state)
+        self._cost_ready = True
+        if self._pending_cost_data is not None:
+            pending = self._pending_cost_data
+            self._pending_cost_data = None
+            self._process_incremental_cost(pending)
+
+    def _process_incremental_cost(self, mqtt_data) -> None:
+        """Accrue consumption at the previous observed tariff, in GBP.
+
+        If no usable history exists, seed today's consumption at the current
+        rate. This is an estimate: earlier tariff changes cannot be recovered
+        from a single MQTT reading. Gaps likewise use the last observed rate.
+        """
+        if not self._cost_ready:
+            self._pending_cost_data = mqtt_data
+            return
+        try:
+            energy = mqtt_data["electricitymeter"]["energy"]["import"]
+            price = energy["price"]
+            day_value = energy["day"]
+            rate_value = price["unitrate"]
+            standing_value = price["standingcharge"]
+        except (KeyError, TypeError):
+            # Retain upstream's missing-field behaviour without advancing history.
+            return
+        today_kwh = _finite_float(day_value)
+        unit_rate = _finite_float(rate_value)
+        standing = _finite_float(standing_value)
+        try:
+            message_dt = self.get_message_datetime(mqtt_data)
+        except (ValueError, TypeError, AttributeError):
+            return
+        if message_dt.tzinfo is None:
+            return
+        if self._last_cost_timestamp and message_dt <= self._last_cost_timestamp:
+            return
+        if today_kwh is None or today_kwh < 0 or unit_rate is None or standing is None:
+            # Unknown prices are not free electricity. Keep the last good baseline.
+            self._attr_native_value = None
+            if self.hass is not None:
+                self.async_schedule_update_ha_state()
+            return
+        zone = self._time_zone or (self.hass.config.time_zone if self.hass else "UTC")
+        reset = self.determine_last_reset(message_dt, ZoneInfo(zone), MeterInterval.DAY)
+        previous_reset = _aware_datetime(self._last_reset_utc)
+        if previous_reset and reset < previous_reset:
+            return
+        if previous_reset != reset or self._cost_accum is None:
+            self._cost_accum = today_kwh * unit_rate
+            self._cost_estimated = today_kwh > 0
+        elif today_kwh < self._prev_kwh:
+            # A stale/invalid daily counter must not create a second charge later.
+            self._attr_native_value = None
+            if self.hass is not None:
+                self.async_schedule_update_ha_state()
+            return
+        else:
+            self._cost_accum += (today_kwh - self._prev_kwh) * self._prev_rate
+        self._prev_kwh = today_kwh
+        self._prev_rate = unit_rate
+        self._last_reset_utc = reset.isoformat()
+        self._attr_last_reset = reset
+        self._last_cost_timestamp = message_dt
+        self._attr_native_value = round(standing + self._cost_accum, 2)
+        if self.hass is not None:
+            self.async_schedule_update_ha_state()
 
     @staticmethod
     def determine_last_reset(
@@ -519,6 +619,9 @@ class HildebrandGlowMqttSensor(RestoreSensor):
 
     def process_update(self, mqtt_data) -> None:
         """Update the state of the sensor."""
+        if self._is_incremental_cost:
+            self._process_incremental_cost(mqtt_data)
+            return
         try:
             new_value = self._func(mqtt_data)
             if self._units_by_name:
@@ -578,4 +681,37 @@ class HildebrandGlowMqttSensor(RestoreSensor):
     @property
     def extra_state_attributes(self):
         """Return the state attributes."""
-        return {ATTR_DEVICE_ID: self._device_id}
+        attrs = {ATTR_DEVICE_ID: self._device_id}
+        if self._is_incremental_cost and self._cost_accum is not None:
+            attrs.update(
+                cost_accum=self._cost_accum,
+                prev_kwh=self._prev_kwh,
+                prev_rate=self._prev_rate,
+                last_reset_utc=self._last_reset_utc,
+                last_cost_timestamp=(
+                    self._last_cost_timestamp.isoformat() if self._last_cost_timestamp else None
+                ),
+                cost_estimated=self._cost_estimated,
+            )
+        return attrs
+
+
+
+def _finite_float(value):
+    """Accept numeric readings, including zero/negative tariffs, but not NaN/inf."""
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) else None
+
+
+def _aware_datetime(value):
+    """Read a persisted timestamp only if it has an explicit timezone."""
+    try:
+        result = datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return None
+    return result if result.tzinfo is not None else None
